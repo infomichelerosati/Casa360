@@ -47,9 +47,9 @@
     <div class="grid-stack-item" gs-id="widget-lavoro" gs-w="4" gs-h="2" gs-x="0" gs-y="0">
         <div class="grid-stack-item-content">
             <div id="dash-shifts-widget"
-                class="clay-card bg-darkblue-card rounded-clay p-4 h-full cursor-pointer active:scale-[0.98] transition-transform hidden"
+                class="clay-card bg-darkblue-card rounded-clay p-4 h-full flex flex-col cursor-pointer active:scale-[0.98] transition-transform hidden"
                 onclick="if(!window.isGridEditing) navigateApp('lavoro')">
-                <div class="flex items-center gap-3 mb-3 relative z-10 w-full">
+                <div class="flex items-center gap-3 mb-3 relative z-10 w-full shrink-0">
                     <div
                         class="w-8 h-8 rounded-full bg-darkblue-base flex items-center justify-center text-darkblue-accent shadow-inner shrink-0">
                         <i class="fa-solid fa-briefcase text-xs"></i>
@@ -57,7 +57,7 @@
                     <h3 class="text-sm font-bold text-darkblue-heading tracking-wider truncate">Turni di Oggi</h3>
                 </div>
                 <div id="dash-shifts-list"
-                    class="flex gap-2 w-full h-full overflow-x-auto hidden-scrollbar pb-1 z-10 relative">
+                    class="flex flex-col gap-1 w-full flex-1 overflow-y-auto hidden-scrollbar z-10 relative">
                     <!-- Generato da JS -->
                 </div>
             </div>

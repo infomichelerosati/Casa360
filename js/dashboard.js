@@ -39,7 +39,7 @@ async function initGridStack() {
     dashGrid = GridStack.init({
         cellHeight: 80,
         margin: 10,
-        disableOneColumnMode: false,
+        disableOneColumnMode: true, // Fix: consente il ridimensionamento orizzontale anche su schermi mobili
         float: false,
         animate: true,
         staticGrid: true // Di default la griglia è bloccata per consentire lo scorrimento Touch su mobile!
@@ -775,15 +775,14 @@ window.fetchTodayShifts = async function () {
                 timeText = `${shift.start_time.substring(0, 5)} - ${shift.end_time.substring(0, 5)}`;
             }
 
+            const dotColor = typeInfo.color.split(' ')[0].replace('text-', 'bg-');
             const html = `
-                <div class="clay-item bg-darkblue-base rounded-2xl p-2 pr-4 flex items-center gap-2 shrink-0 border border-darkblue-card/50">
-                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs ${typeInfo.color}">
-                        <i class="${typeInfo.icon}"></i>
+                <div class="flex items-center justify-between gap-2 border-b border-darkblue-base pb-1.5 mb-1.5 last:border-0 last:mb-0 last:pb-0 w-full shrink-0">
+                    <div class="flex items-center gap-2 overflow-hidden flex-1 min-w-0">
+                        <div class="w-2 h-2 rounded-full ${dotColor} shrink-0"></div>
+                        <span class="text-xs font-bold text-darkblue-heading truncate block w-full">${memberName}</span>
                     </div>
-                    <div>
-                        <p class="text-[10px] uppercase font-bold text-darkblue-icon leading-tight">${memberName}</p>
-                        <p class="text-xs font-bold text-darkblue-heading leading-tight">${timeText}</p>
-                    </div>
+                    <span class="text-[10px] text-darkblue-icon whitespace-nowrap font-medium shrink-0 bg-darkblue-base px-1.5 py-0.5 rounded">${timeText}</span>
                 </div>
             `;
             container.insertAdjacentHTML('beforeend', html);
