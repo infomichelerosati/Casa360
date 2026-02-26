@@ -40,8 +40,23 @@
     </div>
 </header>
 
+<!-- DASHBOARD EDIT DOCK WRAPPER (Visibile solo in Edit Mode) -->
+<div id="dashboard-dock-wrapper"
+    class="w-full bg-darkblue-base rounded-clay border-2 flex flex-col items-center justify-center p-4 mb-4 border-dashed border-darkblue-accent/50 hidden transition-all">
+    <div class="flex items-center gap-2 mb-2 pointer-events-none">
+        <i class="fa-solid fa-box-open text-darkblue-accent"></i>
+        <span class="text-sm font-bold text-darkblue-heading">Widget Nascosti</span>
+    </div>
+    <p class="text-xs text-darkblue-icon text-center mb-3 pointer-events-none">Mentre sei in <span
+            class="text-green-500 font-bold">Modifica</span>, trascina qui dentro i widget per nasconderli, oppure
+        trascinali fuori per ripristinarli.</p>
+
+    <!-- GRIDSTACK DOCK CONTAINER -->
+    <div id="dashboard-dock" class="w-full min-h-[100px] bg-darkblue-card/30 rounded-2xl relative"></div>
+</div>
+
 <!-- GRIDSTACK CONTAINER -->
-<div class="grid-stack" id="dashboard-grid">
+<div class="grid-stack opacity-0 transition-opacity duration-500 w-full" id="dashboard-grid">
 
     <!-- Widget Lavoro Oggi -->
     <div class="grid-stack-item" gs-id="widget-lavoro" gs-w="4" gs-h="2" gs-x="0" gs-y="0">
@@ -65,19 +80,23 @@
     </div>
 
     <!-- Widget Meteo/Temperatura -->
-    <div class="grid-stack-item" gs-id="widget-meteo" gs-w="2" gs-h="2" gs-x="0" gs-y="2">
+    <div class="grid-stack-item weather-widget-container" gs-id="widget-meteo" gs-w="2" gs-h="2" gs-x="0" gs-y="2">
         <div class="grid-stack-item-content">
             <div id="weather-widget"
-                class="clay-card bg-darkblue-card rounded-clay p-5 h-full flex flex-col justify-between cursor-pointer transition-transform active:scale-95"
+                class="clay-card bg-darkblue-card rounded-clay p-3 h-full flex flex-col justify-center items-center cursor-pointer transition-transform active:scale-95 overflow-hidden"
                 onclick="if(!window.isGridEditing) fetchWeather()">
-                <i id="weather-icon"
-                    class="fa-solid fa-cloud-sun text-4xl text-yellow-400 mb-2 drop-shadow-md z-10 relative"></i>
-                <div class="z-10 relative">
-                    <h3 id="weather-temp" class="text-2xl font-bold text-darkblue-heading">--°</h3>
-                    <p id="weather-desc" class="text-xs text-darkblue-icon font-medium mb-1 truncate">Caricamento...</p>
-                    <p id="weather-city"
-                        class="text-[10px] text-darkblue-accent font-bold uppercase tracking-wider truncate">
-                    </p>
+                <div class="weather-inner flex flex-row items-center justify-center gap-2 w-full h-full text-left">
+                    <i id="weather-icon"
+                        class="fa-solid fa-cloud-sun text-4xl text-yellow-400 drop-shadow-md z-10 relative shrink-0 transition-all duration-300 w-[50px] text-center"></i>
+                    <div class="z-10 relative flex flex-col min-w-0 flex-1 justify-center">
+                        <h3 id="weather-temp" class="text-2xl font-bold text-darkblue-heading leading-tight">--°</h3>
+                        <p id="weather-desc"
+                            class="text-xs text-darkblue-icon font-medium mb-0.5 leading-tight line-clamp-2 w-full">
+                            Caricamento...</p>
+                        <p id="weather-city"
+                            class="text-[9px] text-darkblue-accent font-bold uppercase tracking-wider truncate w-full">
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -138,7 +157,6 @@
                         <i>Caricamento urgenze...</i>
                     </div>
                 </div>
-
                 <!-- Pulsante Aggiungi Volante -->
                 <button onclick="if(!window.isGridEditing) navigateApp('spesa');"
                     class="clay-btn-primary w-full h-12 rounded-clay font-bold text-white text-[1rem] flex items-center justify-center gap-3 transition-transform active:scale-95 mt-2 shrink-0 z-10 relative">
@@ -147,6 +165,35 @@
             </section>
         </div>
     </div>
+
+    <!-- SEGNAPOSTO: DOCUMENTI -->
+    <div class="grid-stack-item" gs-id="widget-documenti" gs-w="2" gs-h="2" gs-x="2" gs-y="11">
+        <div class="grid-stack-item-content">
+            <div id="dash-docs-widget"
+                class="clay-card bg-darkblue-card rounded-clay p-5 h-full flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-transform"
+                onclick="if(!window.isGridEditing) navigateApp('documenti');">
+                <i class="fa-solid fa-folder-open text-3xl text-darkblue-icon mb-2 z-10 relative"></i>
+                <h3 class="text-xs font-bold text-darkblue-heading z-10 relative">Documenti</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEGNAPOSTO: ANIMALI -->
+    <div class="grid-stack-item" gs-id="widget-animali" gs-w="2" gs-h="2" gs-x="0" gs-y="11">
+        <div class="grid-stack-item-content">
+            <div id="dash-pets-widget"
+                class="clay-card bg-darkblue-card rounded-clay p-5 h-full flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-transform"
+                onclick="if(!window.isGridEditing) alert('Modulo Animali in arrivo!');">
+                <i class="fa-solid fa-paw text-3xl text-darkblue-icon mb-2 z-10 relative"></i>
+                <h3 class="text-xs font-bold text-darkblue-heading z-10 relative">Animali</h3>
+            </div>
+        </div>
+    </div>
+
+</div> <!--/GRIDSTACK CONTAINER-->
+</section>
+</div>
+</div>
 
 </div> <!--/GRIDSTACK CONTAINER-->
 

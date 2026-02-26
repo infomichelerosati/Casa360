@@ -42,10 +42,24 @@ async function initGridStack() {
         disableOneColumnMode: true, // Fix: consente il ridimensionamento orizzontale anche su schermi mobili
         float: false,
         animate: true,
-        staticGrid: true // Di default la griglia è bloccata per consentire lo scorrimento Touch su mobile!
-    });
+        staticGrid: true, // Di default la griglia è bloccata per consentire lo scorrimento Touch su mobile!
+        acceptWidgets: true // Permette di ricevere widget dal dock
+    }, '#dashboard-grid');
+
+    // Inizializza la Dock (Pannello moduli nascosti)
+    window.dockGrid = GridStack.init({
+        cellHeight: 80,
+        margin: 10,
+        column: 4, // Dock ha sempre 4 colonne fisse
+        disableOneColumnMode: true,
+        float: true,
+        animate: true,
+        staticGrid: true,
+        acceptWidgets: function (el) { return true; } // Accetta tutto
+    }, '#dashboard-dock');
 
     const editBtn = document.getElementById('btn-edit-dashboard');
+    const dockContainer = document.getElementById('dashboard-dock-wrapper');
 
     if (editBtn) {
         editBtn.addEventListener('click', async () => {
@@ -54,12 +68,18 @@ async function initGridStack() {
             if (window.isGridEditing) {
                 // Entra in modalità EDIT
                 dashGrid.setStatic(false);
+                if (window.dockGrid) window.dockGrid.setStatic(false);
+                dockContainer.classList.remove('hidden');
+
                 editBtn.innerHTML = '<i class="fa-solid fa-check text-xl"></i>';
                 editBtn.classList.replace('text-darkblue-icon', 'text-green-500');
                 document.querySelectorAll('.grid-stack-item-content > .clay-card').forEach(c => c.classList.add('animate-pulse', 'border-2', 'border-darkblue-accent/50'));
             } else {
                 // Salva ed esce da modalità EDIT
                 dashGrid.setStatic(true);
+                if (window.dockGrid) window.dockGrid.setStatic(true);
+                dockContainer.classList.add('hidden');
+
                 editBtn.innerHTML = '<i class="fa-solid fa-gear text-xl"></i>';
                 editBtn.classList.replace('text-green-500', 'text-darkblue-icon');
                 document.querySelectorAll('.grid-stack-item-content > .clay-card').forEach(c => c.classList.remove('animate-pulse', 'border-2', 'border-darkblue-accent/50'));
@@ -83,15 +103,28 @@ async function saveGridLayout() {
         // Estrai il layout corrente usando grid.save()
         // NOTA: Per usare un identificatore persistente usiamo gli attributi gs-id
         let layoutNodes = dashGrid.save();
+        let dockNodes = window.dockGrid ? window.dockGrid.save() : [];
 
-        // Pulisce l'oggetto eliminando il contenuto html e tenendo solo id e geometrie
+        // Pulisce l'oggetto eliminando il contenuto html e tenendo solo id, state (hidden) e geometrie
         const layoutData = layoutNodes.map(node => ({
             id: node.id,
             x: node.x,
             y: node.y,
             w: node.w,
-            h: node.h
+            h: node.h,
+            hidden: false
         }));
+
+        dockNodes.forEach(node => {
+            layoutData.push({
+                id: node.id,
+                x: node.x || 0,
+                y: node.y || 0,
+                w: node.w,
+                h: node.h,
+                hidden: true
+            });
+        });
 
         const { error } = await supabase
             .from('family_members')
@@ -126,19 +159,49 @@ async function loadGridLayout() {
         }
 
         if (data && data.dashboard_layout && Array.isArray(data.dashboard_layout) && data.dashboard_layout.length > 0) {
-            // Aggiorna le coordinate dei nodi esistenti senza distruggere i contenuti HTML generati al momento (evita il flash e la scomparsa!)
             dashGrid.batchUpdate();
+            if (window.dockGrid) window.dockGrid.batchUpdate();
+
+            const pCardsList = Array.from(document.querySelectorAll('.grid-stack-item'));
+
             data.dashboard_layout.forEach(savedNode => {
-                const el = document.querySelector(`[gs-id="${savedNode.id}"]`);
+                // Troviamo l'elemento dovunque sia (nella main o nel dock)
+                const el = pCardsList.find(c => c.getAttribute('gs-id') === savedNode.id);
                 if (el) {
-                    dashGrid.update(el, { x: savedNode.x, y: savedNode.y, w: savedNode.w, h: savedNode.h });
+                    if (savedNode.hidden) {
+                        // Spostiamo nel dock se necessario
+                        if (el.parentElement.parentElement.id !== 'dashboard-dock' && window.dockGrid) {
+                            dashGrid.removeWidget(el, false); // false = non eliminare dal DOM
+                            window.dockGrid.addWidget(el, { w: savedNode.w, h: savedNode.h });
+                        } else if (window.dockGrid) {
+                            window.dockGrid.update(el, { w: savedNode.w, h: savedNode.h });
+                        }
+                    } else {
+                        // Manteniamo o riportiamo sulla griglia principale
+                        if (el.parentElement.parentElement.id === 'dashboard-dock' && window.dockGrid) {
+                            window.dockGrid.removeWidget(el, false);
+                            dashGrid.addWidget(el, { x: savedNode.x, y: savedNode.y, w: savedNode.w, h: savedNode.h });
+                        } else {
+                            dashGrid.update(el, { x: savedNode.x, y: savedNode.y, w: savedNode.w, h: savedNode.h });
+                        }
+                    }
                 }
             });
+
             dashGrid.commit();
+            if (window.dockGrid) window.dockGrid.commit();
             console.log("Layout custom sincronizzato:", data.dashboard_layout);
         }
+
     } catch (e) {
         console.warn("Impossibile caricare layout", e);
+    } finally {
+        // Applica l'opacità al container per svelarlo fluidamente (Previene il FOUC - flash di contenuto non stilizzato)
+        // Usiamo setTimeout per consentire al DOM di renderizzare la griglia fittizia prima del fade in
+        setTimeout(() => {
+            const gridEl = document.getElementById('dashboard-grid');
+            if (gridEl) gridEl.classList.remove('opacity-0');
+        }, 150);
     }
 }
 

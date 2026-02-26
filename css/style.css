@@ -7,33 +7,35 @@
 
 /* Hide scrollbar for IE, Edge and Firefox */
 .scrollbar-hide {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
 }
 
 /* Claymorphism Utilities */
 .clay-card {
-    box-shadow: 
+    box-shadow:
         10px 10px 20px rgba(9, 13, 22, 0.4),
         -10px -10px 20px rgba(45, 60, 87, 0.2),
         inset 2px 2px 4px rgba(255, 255, 255, 0.05);
 }
 
 .clay-item {
-    box-shadow: 
+    box-shadow:
         inset 4px 4px 8px rgba(9, 13, 22, 0.5),
         inset -4px -4px 8px rgba(45, 60, 87, 0.2);
 }
 
 .clay-btn {
-    box-shadow: 
+    box-shadow:
         5px 5px 10px rgba(9, 13, 22, 0.4),
         -5px -5px 10px rgba(45, 60, 87, 0.2);
     transition: all 0.2s ease;
 }
 
 .clay-btn:active {
-    box-shadow: 
+    box-shadow:
         inset 4px 4px 8px rgba(9, 13, 22, 0.5),
         inset -4px -4px 8px rgba(45, 60, 87, 0.2);
 }
@@ -48,8 +50,19 @@
         opacity: 0;
         transform: translateY(10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+/* GridStack Override & Layout */
+.grid-stack {
+    margin-left: -5px !important;
+    margin-right: -5px !important;
+}
+
+#dashboard-dock .grid-stack-item {
+    position: relative !important;
 }
