@@ -386,6 +386,37 @@ window.renderNotificationsList = function () {
     });
 };
 
+window.openNotificationsPanel = function () {
+    const modal = document.getElementById('modal-notifications');
+    if (!modal) return;
+    const sheet = modal.querySelector('.bg-darkblue-bg');
+    if (modal && sheet) {
+        modal.classList.remove('opacity-0', 'pointer-events-none');
+        // Timeout per far terminare il fade-in del bg
+        setTimeout(() => {
+            sheet.classList.remove('translate-y-full');
+        }, 50);
+
+        // Renderizza contenuto
+        if (typeof window.renderNotificationsList === 'function') {
+            window.renderNotificationsList();
+        }
+    }
+};
+
+window.closeNotificationsPanel = function () {
+    const modal = document.getElementById('modal-notifications');
+    if (!modal) return;
+    const sheet = modal.querySelector('.bg-darkblue-bg');
+    if (modal && sheet) {
+        sheet.classList.add('translate-y-full');
+        // Aspetta animazione
+        setTimeout(() => {
+            modal.classList.add('opacity-0', 'pointer-events-none');
+        }, 300);
+    }
+};
+
 // Modifica window.navigateApp per lanciare la verifica delle notifiche ad ogni cambio modulo
 const originalNavigateApp = window.navigateApp;
 window.navigateApp = function (moduleName) {

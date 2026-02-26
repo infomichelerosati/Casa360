@@ -12,25 +12,17 @@
     <link rel="apple-touch-icon" href="assets/icon.svg">
 
     <!-- Service Worker Registration -->
+    <!-- Service Worker e PWA Auto-Updater -->
     <script>
+        // 1. Registrazione base Server Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js').then(reg => {
                     console.log('Service Worker Registrato: ', reg.scope);
-
-                    // Rileva aggiornamenti (nuova versione)
-                    reg.addEventListener('updatefound', () => {
-                        const newWorker = reg.installing;
-                        newWorker.addEventListener('statechange', () => {
-                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                console.log('Nuovo aggiornamento disponibile! Ricarico.');
-                            }
-                        });
-                    });
                 }).catch(err => console.log('Service Worker Registrazione Fallita: ', err));
             });
 
-            // Se il SW prende il controllo (claim), ricarica la pagina per applicare la nuova versione e svuotare cache
+            // Se il SW forza un aggiornamento dal file sw.js stesso (Fallback)
             let refreshing = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (!refreshing) {
@@ -40,7 +32,7 @@
             });
         }
 
-        // Traccia l'installazione della PWA
+        // 2. Tracciamento Installazioni PWA
         window.addEventListener('appinstalled', async () => {
             console.log('PWA Installata!');
             if (window.supabase) {
@@ -53,6 +45,86 @@
                 }
             }
         });
+
+        // 3. Auto-Updater Intelligente (Bypassa la cache rigida di GitHub Pages/Mobile)
+        async function checkAppVersion() {
+            try {
+                // Facciamo una richiesta "HEAD" al nostro stesso file HTML
+                // Il parametro `cache: 'no-store'` obbliga il browser a chiedere al VERO server, ignorando la cache del telefono e del Service Worker
+                const response = await fetch(window.location.href, {
+                    method: 'HEAD',
+                    cache: 'no-store'
+                });
+
+                // GitHub Pages restituisce l'header ETag (l'impronta digitale del file). 
+                // Se pubblichi una modifica, l'ETag cambia matematicamente.
+                const newETag = response.headers.get('ETag');
+
+                if (newETag) {
+                    const currentETag = localStorage.getItem('family_os_pwa_version');
+
+                    // Se non ci sono ETags salvati (prima volta), salviamolo e usciamo
+                    if (!currentETag) {
+                        localStorage.setItem('family_os_pwa_version', newETag);
+                        return;
+                    }
+
+                    // Se l'impronta del server è DIVERSA da quella sul telefono, c'è un aggiornamento reale!
+                    if (currentETag !== newETag && currentETag !== 'null') {
+                        console.log("🔥 Nuovo aggiornamento scoperto! (Codice:", newETag, ")");
+
+                        // Salviamo temporaneamente la nuova versione in attesa dell'OK
+                        localStorage.setItem('family_os_pwa_version_pending', newETag);
+
+                        // Mostriamo il Modale utente standard dell'App
+                        if (window.showConfirmModal) {
+                            window.showConfirmModal(
+                                "Aggiornamento Disponibile",
+                                "È stata pubblicata una nuova versione dell'applicazione! Clicca su Procedi per aggiornarla istantaneamente.",
+                                async () => {
+                                    // PURGA PROFONDA: Eliminiamo fisicamente le cache del browser
+                                    if ('caches' in window) {
+                                        const cacheNames = await caches.keys();
+                                        await Promise.all(cacheNames.map(name => caches.delete(name)));
+                                        console.log('Tutte le vecchie cache svuotate.');
+                                    }
+
+                                    // Deregistriamo gli attuali Service Worker difettosi
+                                    if ('serviceWorker' in navigator) {
+                                        const registrations = await navigator.serviceWorker.getRegistrations();
+                                        for (let sw of registrations) {
+                                            await sw.unregister();
+                                        }
+                                    }
+
+                                    // Salviamo la firma della nuova versione
+                                    localStorage.setItem('family_os_pwa_version', newETag);
+                                    localStorage.removeItem('family_os_pwa_version_pending');
+
+                                    // Ricarichiamo la pagina duramente saltando la cache
+                                    window.location.reload(true);
+                                }
+                            );
+                        }
+                    }
+                }
+            } catch (err) {
+                console.log("Impossibile verificare versione (offline?)", err);
+            }
+        }
+
+        // Quando il browser carica l'app, aspettiamo 3 secondi che si avvii fluidamente e poi cerchiamo aggiornamenti in background
+        window.addEventListener('load', () => {
+            setTimeout(checkAppVersion, 3000);
+        });
+
+        // Quando chiudi e riapri l'app dal telefono (risveglio dalla memoria RAM)
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                checkAppVersion();
+            }
+        });
+
     </script>
 
     <script src="https://cdn.tailwindcss.com"></script>
