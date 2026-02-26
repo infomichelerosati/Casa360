@@ -127,7 +127,7 @@ async function loadGridLayout() {
             return;
         }
 
-        if (data && data.dashboard_layout && Array.isArray(data.dashboard_layout)) {
+        if (data && data.dashboard_layout && Array.isArray(data.dashboard_layout) && data.dashboard_layout.length > 0) {
             // Carica layout salvato dalla colonna JSONB
             dashGrid.load(data.dashboard_layout);
             console.log("Layout custom caricato:", data.dashboard_layout);
