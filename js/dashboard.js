@@ -21,6 +21,120 @@ async function initDashboard() {
     // Al primo caricamento, prova a scaricare il meteo basandosi sull'ultima posizione (se salvata in localStorage) o fallback Roma.
     // Il permesso geolocalizzazione verrà chiesto la prima volta che si esegue la funzione meteo vera e propria.
     fetchWeather();
+
+    // Inizializza GridStack per il layout della Dashboard Drag & Drop
+    setTimeout(() => {
+        initGridStack();
+    }, 100);
+}
+
+// ==========================================
+// GRIDSTACK.JS (DRAG & DROP DASHBOARD)
+// ==========================================
+let dashGrid = null;
+window.isGridEditing = false;
+
+async function initGridStack() {
+    // Configurazione base della griglia
+    dashGrid = GridStack.init({
+        cellHeight: 80,
+        margin: 10,
+        disableOneColumnMode: false,
+        float: false,
+        animate: true,
+        staticGrid: true // Di default la griglia è bloccata per consentire lo scorrimento Touch su mobile!
+    });
+
+    const editBtn = document.getElementById('btn-edit-dashboard');
+
+    if (editBtn) {
+        editBtn.addEventListener('click', async () => {
+            window.isGridEditing = !window.isGridEditing;
+
+            if (window.isGridEditing) {
+                // Entra in modalità EDIT
+                dashGrid.setStatic(false);
+                editBtn.innerHTML = '<i class="fa-solid fa-check mr-1"></i> Salva Layout';
+                editBtn.classList.replace('bg-darkblue-base', 'bg-darkblue-accent');
+                editBtn.classList.replace('text-darkblue-icon', 'text-white');
+                document.querySelectorAll('.grid-stack-item-content > .clay-card').forEach(c => c.classList.add('animate-pulse', 'border-2', 'border-darkblue-accent/50'));
+            } else {
+                // Salva ed esce da modalità EDIT
+                dashGrid.setStatic(true);
+                editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square mr-1"></i> Modifica Dashboard';
+                editBtn.classList.replace('bg-darkblue-accent', 'bg-darkblue-base');
+                editBtn.classList.replace('text-white', 'text-darkblue-icon');
+                document.querySelectorAll('.grid-stack-item-content > .clay-card').forEach(c => c.classList.remove('animate-pulse', 'border-2', 'border-darkblue-accent/50'));
+
+                // Salva layout su Subapase
+                await saveGridLayout();
+            }
+        });
+    }
+
+    // Carica layout salvato da DB
+    await loadGridLayout();
+}
+
+async function saveGridLayout() {
+    if (!dashGrid || !window.supabase) return;
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Estrai il layout corrente usando grid.save()
+        // NOTA: Per usare un identificatore persistente usiamo gli attributi gs-id
+        let layoutNodes = dashGrid.save();
+
+        // Pulisce l'oggetto eliminando il contenuto html e tenendo solo id e geometrie
+        const layoutData = layoutNodes.map(node => ({
+            id: node.id,
+            x: node.x,
+            y: node.y,
+            w: node.w,
+            h: node.h
+        }));
+
+        const { error } = await supabase
+            .from('family_members')
+            .update({ dashboard_layout: layoutData })
+            .eq('id', user.id);
+
+        if (error) throw error;
+
+        console.log("Layout dashboard GridStack salvato con successo!", layoutData);
+        if (window.showToast) window.showToast('Layout Salvato', 'La tua dashboard è stata salvata.', 'fa-check', 'text-green-500');
+    } catch (e) {
+        console.error("Errore salvataggio layout dashboard:", e);
+    }
+}
+
+async function loadGridLayout() {
+    if (!dashGrid || !window.supabase) return;
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Fetch user preferences dalla colonna jsonb aggiunta (dashboard_layout)
+        const { data, error } = await supabase
+            .from('family_members')
+            .select('dashboard_layout')
+            .eq('id', user.id)
+            .single();
+
+        if (error && error.code !== 'PGRST116') {
+            console.error("Errore fetch layout, uso predefinito.", error);
+            return;
+        }
+
+        if (data && data.dashboard_layout && Array.isArray(data.dashboard_layout)) {
+            // Carica layout salvato dalla colonna JSONB
+            dashGrid.load(data.dashboard_layout);
+            console.log("Layout custom caricato:", data.dashboard_layout);
+        }
+    } catch (e) {
+        console.warn("Impossibile caricare layout", e);
+    }
 }
 
 // ==========================================

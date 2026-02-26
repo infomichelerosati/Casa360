@@ -35,91 +35,123 @@
     </div>
 </header>
 
-<!-- Widget Lavoro Oggi -->
-<div id="dash-shifts-widget"
-    class="clay-card bg-darkblue-card rounded-clay p-4 mb-6 cursor-pointer active:scale-[0.98] transition-transform hidden"
-    onclick="navigateApp('lavoro')">
-    <div class="flex items-center gap-3 mb-3">
-        <div
-            class="w-8 h-8 rounded-full bg-darkblue-base flex items-center justify-center text-darkblue-accent shadow-inner">
-            <i class="fa-solid fa-briefcase text-xs"></i>
-        </div>
-        <h3 class="text-sm font-bold text-darkblue-heading tracking-wider">Turni di Oggi</h3>
-    </div>
-    <div id="dash-shifts-list" class="flex gap-2 w-full overflow-x-auto hidden-scrollbar pb-1">
-        <!-- Generato da JS -->
-    </div>
+<!-- Pulsante Modifica Layout -->
+<div class="flex justify-end mb-4">
+    <button id="btn-edit-dashboard"
+        class="clay-btn bg-darkblue-base px-4 py-2 rounded-full text-xs font-bold text-darkblue-icon active:scale-95 transition-all outline-none">
+        <i class="fa-solid fa-pen-to-square mr-1"></i> Modifica Dashboard
+    </button>
 </div>
 
-<!-- Widget Rapidi (Cards) -->
-<div class="grid grid-cols-2 gap-4 mb-8">
+<!-- GRIDSTACK CONTAINER -->
+<div class="grid-stack" id="dashboard-grid">
+
+    <!-- Widget Lavoro Oggi -->
+    <div class="grid-stack-item" gs-id="widget-lavoro" gs-w="4" gs-h="2" gs-x="0" gs-y="0">
+        <div class="grid-stack-item-content">
+            <div id="dash-shifts-widget"
+                class="clay-card bg-darkblue-card rounded-clay p-4 h-full cursor-pointer active:scale-[0.98] transition-transform hidden"
+                onclick="if(!window.isGridEditing) navigateApp('lavoro')">
+                <div class="flex items-center gap-3 mb-3 relative z-10 w-full">
+                    <div
+                        class="w-8 h-8 rounded-full bg-darkblue-base flex items-center justify-center text-darkblue-accent shadow-inner shrink-0">
+                        <i class="fa-solid fa-briefcase text-xs"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-darkblue-heading tracking-wider truncate">Turni di Oggi</h3>
+                </div>
+                <div id="dash-shifts-list"
+                    class="flex gap-2 w-full h-full overflow-x-auto hidden-scrollbar pb-1 z-10 relative">
+                    <!-- Generato da JS -->
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Widget Meteo/Temperatura -->
-    <div id="weather-widget"
-        class="clay-card bg-darkblue-card rounded-clay p-5 flex flex-col justify-between aspect-square cursor-pointer transition-transform active:scale-95"
-        onclick="fetchWeather()">
-        <i id="weather-icon" class="fa-solid fa-cloud-sun text-4xl text-yellow-400 mb-2 drop-shadow-md"></i>
-        <div>
-            <h3 id="weather-temp" class="text-2xl font-bold text-darkblue-heading">--°</h3>
-            <p id="weather-desc" class="text-xs text-darkblue-icon font-medium mb-1">Caricamento...</p>
-            <p id="weather-city" class="text-[10px] text-darkblue-accent font-bold uppercase tracking-wider truncate">
-            </p>
+    <div class="grid-stack-item" gs-id="widget-meteo" gs-w="2" gs-h="2" gs-x="0" gs-y="2">
+        <div class="grid-stack-item-content">
+            <div id="weather-widget"
+                class="clay-card bg-darkblue-card rounded-clay p-5 h-full flex flex-col justify-between cursor-pointer transition-transform active:scale-95"
+                onclick="if(!window.isGridEditing) fetchWeather()">
+                <i id="weather-icon"
+                    class="fa-solid fa-cloud-sun text-4xl text-yellow-400 mb-2 drop-shadow-md z-10 relative"></i>
+                <div class="z-10 relative">
+                    <h3 id="weather-temp" class="text-2xl font-bold text-darkblue-heading">--°</h3>
+                    <p id="weather-desc" class="text-xs text-darkblue-icon font-medium mb-1 truncate">Caricamento...</p>
+                    <p id="weather-city"
+                        class="text-[10px] text-darkblue-accent font-bold uppercase tracking-wider truncate">
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- Widget Prossimo Appuntamento -->
-    <div id="dash-next-event"
-        class="clay-card bg-darkblue-card rounded-clay p-5 flex flex-col justify-between aspect-square cursor-pointer active:scale-95 transition-transform"
-        onclick="navigateApp('calendario');">
-        <div
-            class="w-10 h-10 rounded-full bg-darkblue-base text-darkblue-icon flex items-center justify-center mb-2 shadow-inner">
-            <i class="fa-solid fa-calendar-day"></i>
-        </div>
-        <div>
-            <h3 class="text-sm leading-tight text-darkblue-icon">Prossimo</h3>
-            <h3 class="text-lg leading-tight font-bold text-darkblue-heading mt-1">Nessuno</h3>
-        </div>
-    </div>
-</div>
-
-<!-- ========================================== -->
-<!-- PROMEMORIA FARMACI (Daily Meds)            -->
-<!-- ========================================== -->
-<section class="flex flex-col gap-4 mb-8" id="dash-meds-section" style="display: none;">
-    <div class="flex justify-between items-end">
-        <h2 class="text-xl font-bold text-darkblue-heading">Le mie terapie di oggi</h2>
-        <a href="#" class="text-xs font-bold text-darkblue-accent"
-            onclick="event.preventDefault(); window.navigateApp('salute');">Modulo Salute</a>
-    </div>
-    <div class="flex flex-col gap-3" id="dash-meds-list">
-        <!-- Verranno generati i bottoni delle pillole -->
-    </div>
-</section>
-
-<!-- ========================================== -->
-<!-- SPESA URGENTE                              -->
-<!-- ========================================== -->
-<section class="flex flex-col gap-4">
-    <div class="flex justify-between items-end">
-        <h2 class="text-xl font-bold text-darkblue-heading">Da comprare (Urgenti)</h2>
-        <a href="#" class="text-xs font-bold text-darkblue-accent"
-            onclick="event.preventDefault(); window.navigateApp('spesa');">Vedi tutto</a>
-    </div>
-
-    <!-- Lista item -->
-    <div class="flex flex-col gap-3" id="dash-urgenti-list">
-        <!-- Message -->
-        <div class="clay-item p-4 rounded-clay bg-darkblue-card text-center text-darkblue-icon text-sm">
-            <i>Caricamento urgenze...</i>
+    <div class="grid-stack-item" gs-id="widget-calendario" gs-w="2" gs-h="2" gs-x="2" gs-y="2">
+        <div class="grid-stack-item-content">
+            <div id="dash-next-event"
+                class="clay-card bg-darkblue-card rounded-clay p-5 h-full flex flex-col justify-between cursor-pointer active:scale-95 transition-transform"
+                onclick="if(!window.isGridEditing) navigateApp('calendario');">
+                <div
+                    class="w-10 h-10 rounded-full bg-darkblue-base text-darkblue-icon flex items-center justify-center mb-2 shadow-inner z-10 relative">
+                    <i class="fa-solid fa-calendar-day"></i>
+                </div>
+                <div class="z-10 relative">
+                    <h3 class="text-sm leading-tight text-darkblue-icon truncate">Prossimo</h3>
+                    <h3 class="text-lg leading-tight font-bold text-darkblue-heading mt-1 line-clamp-2 break-words">
+                        Nessuno</h3>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Pulsante Aggiungi Volante -->
-    <button onclick="navigateApp('spesa');"
-        class="clay-btn-primary w-full h-14 rounded-clay font-bold text-white text-lg flex items-center justify-center gap-3 transition-transform active:scale-95 mt-2">
-        <i class="fa-solid fa-cart-shopping"></i> Apri Modulo Spesa
-    </button>
-</section>
+    <!-- PROMEMORIA FARMACI (Daily Meds) -->
+    <div class="grid-stack-item" gs-id="widget-salute" gs-w="4" gs-h="3" gs-x="0" gs-y="4">
+        <div class="grid-stack-item-content">
+            <section class="clay-card bg-darkblue-card rounded-clay p-5 h-full flex flex-col gap-4"
+                id="dash-meds-section" style="display: none;">
+                <div class="flex justify-between items-end shrink-0 z-10 relative">
+                    <h2 class="text-[1.1rem] font-bold text-darkblue-heading">Mie terapie oggi</h2>
+                    <a href="#" class="text-xs font-bold text-darkblue-accent"
+                        onclick="event.preventDefault(); if(!window.isGridEditing) window.navigateApp('salute');">Apri</a>
+                </div>
+                <div class="flex flex-col gap-3 overflow-y-auto hidden-scrollbar flex-1 z-10 relative h-full"
+                    id="dash-meds-list">
+                    <!-- Verranno generati i bottoni delle pillole -->
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- SPESA URGENTE -->
+    <div class="grid-stack-item" gs-id="widget-spesa" gs-w="4" gs-h="4" gs-x="0" gs-y="7">
+        <div class="grid-stack-item-content">
+            <section class="clay-card bg-darkblue-card rounded-clay p-5 h-full flex flex-col gap-4">
+                <div class="flex justify-between items-end shrink-0 z-10 relative">
+                    <h2 class="text-[1.1rem] font-bold text-darkblue-heading">Spesa Urgente</h2>
+                    <a href="#" class="text-xs font-bold text-darkblue-accent"
+                        onclick="event.preventDefault(); if(!window.isGridEditing) window.navigateApp('spesa');">Apri</a>
+                </div>
+
+                <!-- Lista item -->
+                <div class="flex flex-col gap-3 overflow-y-auto hidden-scrollbar flex-1 z-10 relative"
+                    id="dash-urgenti-list">
+                    <!-- Message -->
+                    <div class="clay-item p-4 rounded-clay bg-darkblue-base text-center text-darkblue-icon text-sm">
+                        <i>Caricamento urgenze...</i>
+                    </div>
+                </div>
+
+                <!-- Pulsante Aggiungi Volante -->
+                <button onclick="if(!window.isGridEditing) navigateApp('spesa');"
+                    class="clay-btn-primary w-full h-12 rounded-clay font-bold text-white text-[1rem] flex items-center justify-center gap-3 transition-transform active:scale-95 mt-2 shrink-0 z-10 relative">
+                    <i class="fa-solid fa-cart-shopping"></i> Apri Spesa
+                </button>
+            </section>
+        </div>
+    </div>
+
+</div> <!--/GRIDSTACK CONTAINER-->
 
 <!-- MODALE NOTIFICHE -->
 <div id="modal-notifications"
