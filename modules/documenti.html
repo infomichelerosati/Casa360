@@ -1,0 +1,306 @@
+<!-- modules/documenti.html -->
+<div class="h-full flex flex-col pt-safe px-4 relative overflow-hidden">
+
+    <!-- HEADER & BUTTONS -->
+    <div class="flex-none mb-6 mt-4 flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-extrabold text-darkblue-heading tracking-tight"
+                style="text-shadow: 1px 1px 2px rgba(255,255,255,0.5);">
+                Archivio
+            </h1>
+            <p class="text-sm text-darkblue-icon font-medium mt-1">
+                Documenti importanti in tasca
+            </p>
+        </div>
+
+        <!-- FAB Add -->
+        <button id="btn-add-document"
+            class="w-14 h-14 rounded-full bg-gradient-to-br from-[#1e40af] to-[#3b82f6] text-white flex items-center justify-center shadow-lg transform transition-transform active:scale-95 group relative overflow-hidden">
+            <!-- Glow effect -->
+            <div
+                class="absolute inset-0 bg-white/20 blur-md rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+            </div>
+            <!-- Ripple -->
+            <div class="absolute inset-0 border-2 border-white/20 rounded-full scale-110"></div>
+            <i class="fa-solid fa-plus text-2xl relative z-10 drop-shadow-md"></i>
+        </button>
+    </div>
+
+    <!-- CATEGORY FILTER SCROLL -->
+    <div class="flex-none -mx-4 px-4 overflow-x-auto scrollbar-hide mb-4 scroll-smooth">
+        <div class="flex gap-2 pb-2" id="doc-categories-container">
+            <!-- Populated via JS -->
+            <button
+                class="doc-cat-btn clay-item active px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap bg-darkblue-accent text-white"
+                data-cat="Tutti">Tutti</button>
+            <button
+                class="doc-cat-btn clay-item px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap bg-darkblue-base text-darkblue-icon hover:text-darkblue-heading"
+                data-cat="Identità">👤 Identità</button>
+            <button
+                class="doc-cat-btn clay-item px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap bg-darkblue-base text-darkblue-icon hover:text-darkblue-heading"
+                data-cat="Salute">⚕️ Salute</button>
+            <button
+                class="doc-cat-btn clay-item px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap bg-darkblue-base text-darkblue-icon hover:text-darkblue-heading"
+                data-cat="Casa">🏠 Casa</button>
+            <button
+                class="doc-cat-btn clay-item px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap bg-darkblue-base text-darkblue-icon hover:text-darkblue-heading"
+                data-cat="Veicoli">🚗 Veicoli</button>
+            <button
+                class="doc-cat-btn clay-item px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap bg-darkblue-base text-darkblue-icon hover:text-darkblue-heading"
+                data-cat="Altro">📄 Altro</button>
+        </div>
+    </div>
+
+    <!-- MASONRY / GRID OF DOCUMENTS -->
+    <div class="flex-1 overflow-y-auto scrollbar-hide -mx-4 px-4">
+        <!-- Loader e Empty State gestiti via JS -->
+        <div id="documents-grid" class="grid grid-cols-2 gap-4 auto-rows-max">
+            <!-- Example Card 
+            <div class="clay-card rounded-3xl p-3 flex flex-col gap-2 relative overflow-hidden group">
+                ... 
+            </div>
+            -->
+        </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- MODAL 1: ADD NEW DOCUMENT (WITH CROPPER)     -->
+    <!-- ========================================== -->
+    <div id="modal-doc-upload"
+        class="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 backdrop-blur-sm opacity-0 pointer-events-none transition-all duration-300 px-4 pb-bottom-bar">
+        <div class="bg-darkblue-bg w-full max-w-md rounded-[2.5rem] shadow-2xl transform translate-y-full transition-transform duration-300 h-auto max-h-[85vh] flex flex-col relative overflow-hidden"
+            id="modal-content-doc-upload">
+
+            <div class="absolute inset-0 bg-gradient-to-br from-white/40 to-white/10 opacity-50 backdrop-blur-xl -z-10">
+            </div>
+
+            <!-- Header Modal -->
+            <div class="flex justify-between items-center p-6 pb-4 border-b border-white/20 shrink-0">
+                <h3 class="text-xl font-bold text-darkblue-heading">Nuovo Documento</h3>
+                <button id="btn-close-doc-upload"
+                    class="w-8 h-8 rounded-full bg-darkblue-base text-darkblue-icon flex items-center justify-center active:scale-95 transition-transform shadow-inner">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="p-6 overflow-y-auto scrollbar-hide flex-1 relative">
+                <!-- STEP 1: UPLOAD PHOTO/PDF -->
+                <div id="doc-upload-step-1" class="flex flex-col gap-4 transition-all duration-300">
+                    <div
+                        class="relative w-full aspect-video border-2 border-dashed border-darkblue-icon/30 rounded-3xl flex flex-col items-center justify-center bg-darkblue-base/50 text-darkblue-icon hover:bg-darkblue-base/80 hover:border-darkblue-accent transition-colors overflow-hidden group">
+
+                        <input type="file" id="doc-file-input" accept="image/*,application/pdf"
+                            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20">
+
+                        <div
+                            class="z-10 flex flex-col items-center pointer-events-none group-hover:scale-105 transition-transform duration-300">
+                            <i class="fa-solid fa-camera text-4xl mb-2 text-darkblue-accent opacity-80"></i>
+                            <span class="text-sm font-bold text-darkblue-heading">Scatta o Scegli File</span>
+                            <span class="text-[10px] uppercase font-bold text-darkblue-icon opacity-70 mt-1">Immagini o
+                                PDF</span>
+                        </div>
+                    </div>
+
+                    <div id="doc-file-info"
+                        class="hidden flex items-center justify-between p-3 rounded-2xl bg-darkblue-card border border-white/20 clay-item">
+                        <div class="flex items-center gap-3 overflow-hidden">
+                            <div
+                                class="w-10 h-10 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
+                                <i id="doc-file-icon" class="fa-solid fa-file-image"></i>
+                            </div>
+                            <div class="truncate">
+                                <p id="doc-file-name" class="text-xs font-bold text-darkblue-heading truncate">file.jpg
+                                </p>
+                                <p id="doc-file-size" class="text-[10px] text-darkblue-icon uppercase">2.4 MB</p>
+                            </div>
+                        </div>
+                        <button id="btn-reset-file"
+                            class="w-8 h-8 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-trash text-xs"></i>
+                        </button>
+                    </div>
+
+                    <!-- METADATA FORM -->
+                    <form id="form-doc-meta" class="flex flex-col gap-4 mt-2">
+
+                        <!-- Categoria & Scadenza -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <!-- Category Select (Custom) -->
+                            <div
+                                class="relative clay-card rounded-2xl bg-darkblue-card border border-white/20 px-4 py-2">
+                                <label
+                                    class="block text-[10px] uppercase text-darkblue-icon font-bold tracking-wider mb-1">Categoria
+                                    <span class="text-red-500">*</span></label>
+                                <select id="doc-category" required
+                                    class="w-full bg-transparent text-sm font-bold text-darkblue-heading outline-none appearance-none cursor-pointer placeholder-darkblue-icon bg-none">
+                                    <option value="Identità">👤 Identità</option>
+                                    <option value="Salute">⚕️ Salute</option>
+                                    <option value="Casa">🏠 Casa</option>
+                                    <option value="Veicoli">🚗 Veicoli</option>
+                                    <option value="Scuola">🎓 Scuola</option>
+                                    <option value="Altro" selected>📄 Altro</option>
+                                </select>
+                                <div
+                                    class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-darkblue-icon">
+                                    <i class="fa-solid fa-chevron-down text-xs"></i>
+                                </div>
+                            </div>
+
+                            <!-- Expiry Date -->
+                            <div
+                                class="relative clay-card rounded-2xl bg-darkblue-card border border-white/20 px-4 py-2">
+                                <label
+                                    class="block text-[10px] uppercase text-darkblue-icon font-bold tracking-wider mb-1">Scadenza</label>
+                                <input type="date" id="doc-expiry"
+                                    class="w-full bg-transparent text-sm font-bold text-darkblue-heading outline-none [&::-webkit-calendar-picker-indicator]:opacity-50">
+                            </div>
+                        </div>
+
+                        <!-- Titolo -->
+                        <div class="relative clay-card rounded-2xl bg-darkblue-card border border-white/20 p-4">
+                            <label
+                                class="block text-[10px] uppercase text-darkblue-icon font-bold tracking-wider mb-2">Titolo
+                                Documento <span class="text-red-500">*</span></label>
+                            <input type="text" id="doc-title" required placeholder="Es. Patente di Mario"
+                                class="w-full bg-transparent text-base font-bold text-darkblue-heading outline-none placeholder-darkblue-icon/50">
+                        </div>
+
+                        <!-- Descrizione -->
+                        <div class="relative clay-card rounded-2xl bg-darkblue-card border border-white/20 p-4">
+                            <label
+                                class="block text-[10px] uppercase text-darkblue-icon font-bold tracking-wider mb-2">Note
+                                (Opzionali)</label>
+                            <textarea id="doc-desc" rows="2" placeholder="Informazioni utili..."
+                                class="w-full bg-transparent text-sm text-darkblue-heading outline-none resize-none placeholder-darkblue-icon/50"></textarea>
+                        </div>
+
+                        <div class="pt-2">
+                            <button type="button" id="btn-next-step" disabled
+                                class="w-full bg-gradient-to-r from-blue-600 to-blue-400 text-white rounded-2xl py-4 font-bold text-lg shadow-lg active:scale-95 transition-all opacity-50 cursor-not-allowed">
+                                Procedi al Ritaglio <i class="fa-solid fa-arrow-right ml-2 text-sm"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- STEP 2: CROPPER ZONE -->
+                <div id="doc-upload-step-2"
+                    class="hidden flex flex-col gap-4 absolute inset-0 z-20 bg-darkblue-bg p-4 pb-0 h-full">
+
+                    <div class="flex justify-between items-center mb-2 shrink-0">
+                        <button id="btn-back-step"
+                            class="w-8 h-8 rounded-full bg-darkblue-base text-darkblue-icon flex items-center justify-center active:scale-95 transition-transform"><i
+                                class="fa-solid fa-arrow-left"></i></button>
+                        <h4 class="text-sm font-bold text-darkblue-heading">Ritaglio Documento</h4>
+                        <div class="w-8"></div>
+                    </div>
+
+                    <div class="flex-1 w-full bg-black/10 rounded-2xl overflow-hidden relative border border-white/10"
+                        id="cropper-container">
+                        <!-- Immagine sorgente per cropper.js -->
+                        <img id="cropper-image" src="" class="max-w-full max-h-[50vh] block" alt="Da ritagliare">
+                    </div>
+
+                    <div class="pb-safe pt-4 shrink-0 px-2 flex gap-4">
+                        <button id="btn-crop-cancel"
+                            class="flex-1 bg-darkblue-base text-darkblue-heading py-3 rounded-2xl font-bold active:scale-95 shadow-inner">Annulla</button>
+                        <button id="btn-crop-save"
+                            class="flex-1 bg-gradient-to-r from-green-500 to-green-400 text-white py-3 rounded-2xl font-bold flex items-center justify-center gap-2 active:scale-95 shadow-lg">
+                            <span>Carica</span>
+                            <i id="btn-crop-save-spinner" class="fa-solid fa-circle-notch fa-spin hidden"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Hidden Canvas for resizing -->
+                <canvas id="doc-canvas" class="hidden"></canvas>
+
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- MODAL 2: FULLSCREEN DOCUMENT VIEWER        -->
+    <!-- ========================================== -->
+    <div id="modal-doc-viewer"
+        class="fixed inset-0 z-[100] flex flex-col bg-black/95 backdrop-blur-3xl opacity-0 pointer-events-none transition-all duration-300">
+
+        <!-- Top Toolbar -->
+        <div
+            class="flex justify-between items-center p-4 bg-gradient-to-b from-black/80 to-transparent absolute top-0 left-0 right-0 z-10 pt-safe">
+            <button id="btn-close-viewer"
+                class="w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center backdrop-blur-md active:scale-95">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <div class="flex gap-4">
+                <button id="btn-share-doc"
+                    class="w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center backdrop-blur-md active:scale-95 hidden">
+                    <i class="fa-solid fa-share-nodes"></i>
+                </button>
+                <a id="btn-download-doc" href="#" download
+                    class="w-10 h-10 rounded-full bg-blue-500/80 text-white flex items-center justify-center backdrop-blur-md active:scale-95">
+                    <i class="fa-solid fa-download"></i>
+                </a>
+                <button id="btn-delete-doc"
+                    class="w-10 h-10 rounded-full bg-red-500/80 text-white flex items-center justify-center backdrop-blur-md active:scale-95">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Viewer Content Area -->
+        <div class="flex-1 w-full h-full flex items-center justify-center p-4 overflow-hidden relative"
+            id="viewer-container">
+            <!-- Spinner -->
+            <div id="viewer-spinner" class="absolute inset-0 flex items-center justify-center text-white/50 z-0">
+                <i class="fa-solid fa-circle-notch fa-spin text-4xl"></i>
+            </div>
+
+            <!-- Image Viewer -->
+            <img id="viewer-image" src="" alt="Document"
+                class="max-w-full max-h-[85vh] object-contain hidden z-10 shadow-2xl transition-transform duration-200"
+                style="transform-origin: center center;">
+
+            <!-- PDF Viewer Message -->
+            <div id="viewer-pdf"
+                class="hidden flex-col items-center justify-center text-center text-white z-10 w-full max-w-sm px-6">
+                <i class="fa-solid fa-file-pdf text-6xl text-red-500 mb-6 drop-shadow-lg"></i>
+                <h3 class="text-xl font-bold mb-2 break-words" id="viewer-pdf-title">Documento PDF</h3>
+                <p class="text-sm text-white/60 mb-8">Usa il tasto Scarica o il tasto Apri per visualizzare il documento
+                    nel tuo lettore preferito.</p>
+                <a id="btn-open-pdf" href="#" target="_blank"
+                    class="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 font-bold active:scale-95 shadow-lg flex items-center justify-center gap-2">
+                    Apri nel Browser <i class="fa-solid fa-external-link-alt text-xs"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Info Bottom Bar -->
+        <div class="p-6 bg-gradient-to-t from-black/90 to-transparent absolute bottom-0 left-0 right-0 z-10 pb-safe">
+            <div class="flex items-start justify-between gap-4">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span id="viewer-cat-badge"
+                            class="text-[10px] font-bold px-2 py-0.5 rounded text-black bg-white/90">CATEGORIA</span>
+                        <span id="viewer-expiry-badge"
+                            class="hidden text-[10px] font-bold px-2 py-0.5 rounded text-white bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]">
+                            <i class="fa-regular fa-clock mr-1"></i><span id="viewer-expiry-date">Scade
+                                10/10/2026</span>
+                        </span>
+                    </div>
+                    <h2 id="viewer-doc-title" class="text-xl font-extrabold text-white truncate drop-shadow-md">Titolo
+                        Doc</h2>
+                    <p id="viewer-doc-desc" class="text-xs text-white/70 mt-2 leading-relaxed hidden">Descrizione qui...
+                    </p>
+                </div>
+                <div class="text-right shrink-0 flex flex-col items-end pt-1">
+                    <p id="viewer-size" class="text-[10px] text-white/50 font-bold">2.4 MB</p>
+                    <p id="viewer-date" class="text-[10px] text-white/50">20 Ott 2023</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>

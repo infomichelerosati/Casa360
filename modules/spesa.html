@@ -1,0 +1,43 @@
+<!-- modules/spesa.html -->
+<header class="flex justify-between items-center w-full mb-6 mt-2">
+    <div>
+        <h1 class="text-3xl font-bold text-darkblue-heading mb-1">Lista Spesa</h1>
+        <p class="text-sm font-medium opacity-80" id="spesa-counter">Caricamento...</p>
+    </div>
+</header>
+
+<!-- Form Aggiunta Singola Voce -->
+<form id="form-spesa" class="relative w-full mb-8">
+    <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none text-darkblue-icon">
+        <i class="fa-solid fa-cart-arrow-down"></i>
+    </div>
+    <input type="text" id="input-spesa" placeholder="Cosa serve?" required autocomplete="off"
+        class="clay-input w-full bg-darkblue-base h-16 pl-12 pr-14 rounded-clay text-darkblue-text placeholder-darkblue-icon/70 transition-all focus:outline-none focus:ring-2 focus:ring-darkblue-accent/50 outline-none border-none text-lg">
+
+    <button type="button" id="btn-urgente"
+        class="absolute inset-y-0 right-14 w-10 h-10 my-auto rounded-full flex items-center justify-center text-darkblue-icon hover:text-red-400 transition-colors"
+        title="Segna come Urgente">
+        <i class="fa-solid fa-bolt"></i>
+    </button>
+
+    <button type="submit"
+        class="absolute inset-y-0 right-2 w-12 h-12 my-auto rounded-full bg-darkblue-accent/20 text-darkblue-accent flex items-center justify-center hover:bg-darkblue-accent hover:text-white transition-all">
+        <i class="fa-solid fa-plus text-xl"></i>
+    </button>
+</form>
+
+<!-- Lista Dinamica: Da Comprare -->
+<div class="mb-8">
+    <h2 class="text-sm font-bold text-darkblue-heading uppercase tracking-wider mb-4 opacity-70">Da Comprare</h2>
+    <div id="lista-da-comprare" class="flex flex-col gap-3">
+        <div class="text-center text-darkblue-icon text-sm py-4">Caricamento...</div>
+    </div>
+</div>
+
+<!-- Lista Dinamica: Nel Carrello / Comprati -->
+<div> <!-- Margine inferiore rimosso, gestito da index.html -->
+    <h2 class="text-sm font-bold text-darkblue-heading uppercase tracking-wider mb-4 opacity-70">Nel Carrello</h2>
+    <div id="lista-comprati" class="flex flex-col gap-3 opacity-60">
+        <!-- Generato via JS -->
+    </div>
+</div>

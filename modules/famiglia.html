@@ -1,0 +1,180 @@
+<!-- modules/famiglia.html -->
+<header class="flex justify-between items-center w-full mb-8 mt-2">
+    <div>
+        <h1 class="text-3xl font-bold text-darkblue-heading mb-1">Famiglia</h1>
+        <p class="text-sm font-medium opacity-80">Gestisci i membri</p>
+    </div>
+    <div class="flex gap-2 relative">
+        <button id="btn-logout"
+            class="w-10 h-10 rounded-full flex items-center justify-center text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-colors shadow-inner clay-item"
+            title="Esci">
+            <i class="fa-solid fa-right-from-bracket"></i>
+        </button>
+        <button id="btn-add-member"
+            class="w-10 h-10 rounded-full bg-darkblue-accent shadow-[0_0_15px_rgba(59,130,246,0.5)] flex items-center justify-center text-white active:scale-90 transition-transform">
+            <i class="fa-solid fa-plus font-bold"></i>
+        </button>
+    </div>
+    </div>
+</header>
+
+<!-- Banner Info Famiglia (Popolato da JS) -->
+<div id="family-info-banner"
+    class="hidden mb-6 clay-card bg-darkblue-base rounded-2xl p-4 flex justify-between items-center border border-darkblue-card shadow-inner">
+    <div>
+        <p class="text-xs font-bold text-darkblue-text uppercase tracking-wider mb-1">La tua famiglia</p>
+        <h2 id="display-family-name" class="text-lg font-bold text-darkblue-heading">...</h2>
+    </div>
+    <div class="text-right">
+        <p class="text-xs font-bold text-darkblue-text uppercase tracking-wider mb-1">Codice Invito</p>
+        <div class="flex items-center gap-2 bg-darkblue-card px-3 py-1.5 rounded-lg shadow-inner">
+            <span id="display-join-code" class="text-darkblue-accent font-mono font-bold tracking-widest">...</span>
+            <button id="btn-copy-code" class="text-darkblue-icon hover:text-darkblue-accent transition-colors">
+                <i class="fa-solid fa-copy"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Impostazioni Meteo -->
+<div class="mb-8">
+    <div class="flex justify-between items-end mb-4">
+        <h2 class="text-xl font-bold text-darkblue-heading">Impostazioni Meteo</h2>
+    </div>
+    <div class="clay-card bg-darkblue-base rounded-2xl p-4 border border-darkblue-card shadow-inner flex gap-2">
+        <input type="text" id="input-weather-city" placeholder="Cerca città (es. Milano, Roma)"
+            class="flex-1 bg-darkblue-card text-darkblue-heading rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-darkblue-accent shadow-inner transition-all text-sm">
+        <button id="btn-save-city"
+            class="clay-btn bg-darkblue-accent text-white px-4 rounded-xl shadow-[0_4px_10px_rgba(59,130,246,0.3)] hover:brightness-110 transition-all font-bold">
+            <i class="fa-solid fa-magnifying-glass"></i>
+        </button>
+    </div>
+    <p class="text-xs text-darkblue-icon mt-2 ml-2" id="weather-city-feedback">Se non impostata, verrà usata la
+        posizione del dispositivo.</p>
+</div>
+
+<!-- Lista Membri -->
+<div id="family-members-list" class="flex flex-col gap-4">
+    <div class="text-center text-darkblue-icon py-8"><i class="fa-solid fa-circle-notch fa-spin text-2xl"></i></div>
+</div>
+
+<!-- Modal Aggiungi/Modifica Membro -->
+<div id="modal-member"
+    class="fixed inset-0 bg-darkblue-base/90 z-50 flex flex-col justify-end transition-opacity duration-300 opacity-0 pointer-events-none">
+
+    <div id="modal-content-member"
+        class="clay-card bg-darkblue-card w-full h-[85vh] rounded-t-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.3)] transform translate-y-full transition-transform duration-300 flex flex-col pt-2 relative">
+
+        <!-- Maniglia per trascinare (visiva) -->
+        <div class="w-16 h-1.5 bg-darkblue-icon/30 rounded-full mx-auto mb-4"></div>
+
+        <div class="px-6 flex justify-between items-center mb-6">
+            <h3 id="modal-member-title" class="text-2xl font-bold text-darkblue-heading">Aggiungi Membro</h3>
+            <button id="btn-close-member-modal"
+                class="w-8 h-8 rounded-full bg-darkblue-base flex items-center justify-center text-darkblue-icon shadow-inner active:scale-90 transition-transform">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <form id="form-member" class="flex-1 px-6 overflow-y-auto space-y-6 pb-20 scrollbar-hide">
+
+            <!-- Nome -->
+            <div>
+                <label class="block text-xs font-bold text-darkblue-text mb-2 uppercase tracking-wider pl-4">Nome
+                    Membro</label>
+                <input type="text" id="member-name" required
+                    class="w-full bg-darkblue-base text-darkblue-heading rounded-full py-4 px-6 focus:outline-none focus:ring-2 focus:ring-darkblue-accent shadow-inner transition-all"
+                    placeholder="Es. Papà, Mamma, Leo...">
+            </div>
+
+            <!-- Ruolo -->
+            <div>
+                <label
+                    class="block text-xs font-bold text-darkblue-text mb-2 uppercase tracking-wider pl-4">Ruolo</label>
+                <div class="relative">
+                    <select id="member-role"
+                        class="w-full bg-darkblue-base text-darkblue-heading rounded-full py-4 px-6 appearance-none focus:outline-none shadow-inner cursor-pointer"
+                        required>
+                        <option value="member">Membro Base</option>
+                        <option value="child">Bambino</option>
+                        <option value="admin">Amministratore</option>
+                    </select>
+                    <i
+                        class="fa-solid fa-chevron-down absolute right-6 top-1/2 transform -translate-y-1/2 text-darkblue-icon pointer-events-none"></i>
+                </div>
+            </div>
+
+            <!-- Colore Avatar -->
+            <div>
+                <label class="block text-xs font-bold text-darkblue-text mb-2 uppercase tracking-wider pl-4">Colore
+                    Avatar</label>
+                <div class="flex flex-wrap gap-4 px-2" id="color-picker">
+                    <label class="cursor-pointer">
+                        <input type="radio" name="member-color" value="#3b82f6" class="peer hidden" checked>
+                        <div
+                            class="w-10 h-10 rounded-full bg-[#3b82f6] peer-checked:ring-4 ring-offset-2 ring-offset-darkblue-card ring-[#3b82f6] transition-all">
+                        </div>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="member-color" value="#ef4444" class="peer hidden">
+                        <div
+                            class="w-10 h-10 rounded-full bg-[#ef4444] peer-checked:ring-4 ring-offset-2 ring-offset-darkblue-card ring-[#ef4444] transition-all">
+                        </div>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="member-color" value="#10b981" class="peer hidden">
+                        <div
+                            class="w-10 h-10 rounded-full bg-[#10b981] peer-checked:ring-4 ring-offset-2 ring-offset-darkblue-card ring-[#10b981] transition-all">
+                        </div>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="member-color" value="#f59e0b" class="peer hidden">
+                        <div
+                            class="w-10 h-10 rounded-full bg-[#f59e0b] peer-checked:ring-4 ring-offset-2 ring-offset-darkblue-card ring-[#f59e0b] transition-all">
+                        </div>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="member-color" value="#8b5cf6" class="peer hidden">
+                        <div
+                            class="w-10 h-10 rounded-full bg-[#8b5cf6] peer-checked:ring-4 ring-offset-2 ring-offset-darkblue-card ring-[#8b5cf6] transition-all">
+                        </div>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="member-color" value="#ec4899" class="peer hidden">
+                        <div
+                            class="w-10 h-10 rounded-full bg-[#ec4899] peer-checked:ring-4 ring-offset-2 ring-offset-darkblue-card ring-[#ec4899] transition-all">
+                        </div>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="member-color" value="#14b8a6" class="peer hidden">
+                        <div
+                            class="w-10 h-10 rounded-full bg-[#14b8a6] peer-checked:ring-4 ring-offset-2 ring-offset-darkblue-card ring-[#14b8a6] transition-all">
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Auth Note (v1) -->
+            <div class="bg-darkblue-base p-4 rounded-2xl flex items-start gap-3 mt-4">
+                <i class="fa-solid fa-circle-info text-darkblue-accent mt-0.5"></i>
+                <p class="text-xs text-darkblue-icon leading-relaxed">
+                    Attualmente stai aggiungendo un "Profilo". L'utente potrà accedere solo usando le credenziali di
+                    registrazione (se le condivide) oppure questo utente esisterà solo come assegnatario per task o
+                    spese.
+                </p>
+            </div>
+
+            <!-- Spazio per scroll -->
+            <div class="h-10"></div>
+        </form>
+
+        <!-- Salva Bar -->
+        <div
+            class="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-darkblue-card via-darkblue-card to-transparent pointer-events-none">
+            <button type="submit" form="form-member" id="btn-save-member"
+                class="w-full clay-btn bg-darkblue-accent text-white font-bold py-4 rounded-full active:scale-95 transition-transform pointer-events-auto shadow-[0_10px_20px_rgba(59,130,246,0.3)]">
+                Salva Membro
+            </button>
+        </div>
+    </div>
+</div>

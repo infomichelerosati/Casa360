@@ -1,0 +1,152 @@
+<!-- modules/lavoro.html -->
+
+<header class="flex justify-between items-center w-full mb-6 mt-2">
+    <div>
+        <h1 class="text-3xl font-bold text-darkblue-heading pl-2 mb-1">🏢 Lavoro</h1>
+        <p class="text-sm font-medium text-darkblue-accent pl-2">Gestione Turni e Riposi</p>
+    </div>
+    <button id="btn-add-shift"
+        class="clay-btn bg-darkblue-accent text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform">
+        <i class="fa-solid fa-plus text-xl"></i>
+    </button>
+</header>
+
+<!-- Controlli Settimana -->
+<div class="flex items-center justify-between clay-card bg-darkblue-card rounded-2xl p-3 mb-6">
+    <button id="btn-prev-week"
+        class="w-10 h-10 rounded-full flex items-center justify-center text-darkblue-icon active:scale-95 clay-item border border-darkblue-base"><i
+            class="fa-solid fa-chevron-left"></i></button>
+    <div class="text-center">
+        <h3 class="font-bold text-darkblue-heading text-sm uppercase" id="current-week-label">Settimana Corrente</h3>
+        <p class="text-[10px] text-darkblue-icon font-medium" id="current-week-dates">--</p>
+    </div>
+    <button id="btn-next-week"
+        class="w-10 h-10 rounded-full flex items-center justify-center text-darkblue-icon active:scale-95 clay-item border border-darkblue-base"><i
+            class="fa-solid fa-chevron-right"></i></button>
+</div>
+
+<!-- Griglia Settimanale -->
+<div id="shifts-grid-container" class="">
+    <!-- Header Membri generato da JS -->
+    <div class="flex gap-2 mb-3" id="shifts-members-header">
+        <!-- Es: Colonna Data fissa e colonne Membri -->
+    </div>
+
+    <div id="shifts-grid-body" class="space-y-3">
+        <div class="flex justify-center items-center h-32">
+            <i class="fa-solid fa-circle-notch fa-spin text-darkblue-accent text-2xl"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Aggiungi Turno (Multiplo) -->
+<div id="modal-shift-form"
+    class="fixed inset-0 bg-darkblue-base/90 z-[60] flex items-center justify-center transition-opacity duration-300 opacity-0 pointer-events-none px-4">
+    <div
+        class="clay-card bg-darkblue-card w-full max-w-sm rounded-[2.5rem] p-6 transform scale-95 transition-transform duration-300 max-h-[90vh] overflow-y-auto hidden-scrollbar flex flex-col">
+        <div class="flex justify-between items-center mb-6 shrink-0">
+            <h3 class="text-xl font-bold text-darkblue-heading">Nuovo Turno</h3>
+            <button id="btn-close-shift-form"
+                class="w-8 h-8 flex items-center justify-center text-darkblue-icon bg-darkblue-base rounded-full clay-item active:scale-95 transition-transform">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <form id="form-shift" class="space-y-4 flex-1">
+
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-darkblue-icon uppercase tracking-wider pl-4">Membro *</label>
+                <select id="shift-member" required
+                    class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 outline-none focus:ring-2 focus:ring-darkblue-accent transition-all clay-item shadow-inner appearance-none">
+                    <!-- Opzioni popolate da JS -->
+                </select>
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-darkblue-icon uppercase tracking-wider pl-4">Tipo di Turno
+                    *</label>
+                <select id="shift-type" required
+                    class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 outline-none focus:ring-2 focus:ring-darkblue-accent transition-all clay-item shadow-inner appearance-none">
+                    <option value="Lavoro">💼 Lavoro</option>
+                    <option value="Riposo">🛋️ Riposo</option>
+                    <option value="Ferie">🏖️ Ferie</option>
+                    <option value="Malattia">🤒 Malattia</option>
+                    <option value="Permesso">⏱️ Permesso</option>
+                    <option value="Reperibilità">📱 Reperibilità</option>
+                    <option value="Altro">📝 Altro</option>
+                </select>
+            </div>
+
+            <!-- Box Orari (Visibile solo se Lavoro, Permesso, Reperibilità) -->
+            <div id="shift-time-container" class="bg-darkblue-base p-4 rounded-3xl clay-item shadow-inner space-y-3">
+
+                <!-- Pulsanti Rapidi Recenti -->
+                <div id="shift-presets" class="flex flex-wrap gap-2 mb-2 hidden">
+                    <p class="text-[10px] w-full text-darkblue-icon font-bold uppercase mb-1">Orari Recenti</p>
+                    <!-- Popolato da JS -->
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-darkblue-icon uppercase tracking-wider pl-2">Inizio</label>
+                        <input type="time" id="shift-start"
+                            class="w-full bg-darkblue-card text-darkblue-heading rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-darkblue-accent transition-all"
+                            style="color-scheme: dark;">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-darkblue-icon uppercase tracking-wider pl-2">Fine</label>
+                        <input type="time" id="shift-end"
+                            class="w-full bg-darkblue-card text-darkblue-heading rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-darkblue-accent transition-all"
+                            style="color-scheme: dark;">
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-1 mb-2">
+                <label class="text-xs font-bold text-darkblue-icon uppercase tracking-wider pl-4">Giorni da assegnare
+                    *</label>
+                <p class="text-[10px] text-darkblue-icon/60 pl-4 mb-2 leading-tight">Puoi selezionare più giorni della
+                    settimana corrente in un solo colpo.</p>
+
+                <!-- Pills per i 7 giorni -->
+                <div class="grid grid-cols-4 gap-2" id="shift-days-selector">
+                    <!-- Popolati da JS. Es: <button type="button" class="...">Lun 24</button> -->
+                </div>
+            </div>
+
+            <button type="submit" id="btn-save-shift"
+                class="clay-btn bg-darkblue-accent text-white w-full h-14 rounded-full font-bold text-lg flex items-center justify-center active:scale-95 transition-transform mt-6 shrink-0">
+                <i class="fa-solid fa-check mr-2"></i> Salva
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Dettaglio Turno -->
+<div id="modal-shift-details"
+    class="fixed inset-0 bg-darkblue-base/90 z-[70] flex items-center justify-center transition-opacity duration-300 opacity-0 pointer-events-none px-4">
+    <div
+        class="clay-card bg-darkblue-card w-full max-w-sm rounded-[2.5rem] p-6 transform scale-95 transition-transform duration-300">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-darkblue-heading">Dettaglio</h3>
+            <button id="btn-close-shift-details"
+                class="w-8 h-8 flex items-center justify-center text-darkblue-icon bg-darkblue-base rounded-full clay-item active:scale-95 transition-transform">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div class="space-y-4 mb-6 text-center">
+            <div class="w-16 h-16 mx-auto rounded-full bg-darkblue-base flex items-center justify-center text-3xl clay-item shadow-inner mb-2"
+                id="detail-shift-icon">💼</div>
+            <h3 class="text-2xl font-bold text-darkblue-heading" id="detail-shift-type">Lavoro</h3>
+            <p class="text-sm font-bold text-darkblue-accent" id="detail-shift-date">Lun 24 Feb</p>
+            <p class="text-lg font-bold text-darkblue-heading" id="detail-shift-time">08:00 - 15:00</p>
+            <p class="text-xs text-darkblue-icon" id="detail-shift-member">Membro</p>
+        </div>
+
+        <button id="btn-delete-shift"
+            class="clay-btn bg-red-400 text-white w-full h-12 rounded-full font-bold flex items-center justify-center active:scale-95 transition-transform">
+            <i class="fa-solid fa-trash-can mr-2"></i> Elimina Turno
+        </button>
+    </div>
+</div>

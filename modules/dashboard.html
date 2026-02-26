@@ -1,0 +1,135 @@
+<!-- modules/dashboard.html -->
+
+<!-- Header -->
+<header class="flex justify-between items-center w-full mb-8 mt-2">
+    <div>
+        <h1 class="text-3xl font-bold text-darkblue-heading mb-1">Oggi</h1>
+        <p class="text-sm font-medium opacity-80" id="dash-date">24 Feb 2026</p>
+    </div>
+
+    <div class="flex items-center gap-3">
+        <!-- Contatore installazioni anonimo -->
+        <div class="flex flex-col items-end mr-1" title="Utenti che hanno installato l'App">
+            <span class="text-[10px] text-darkblue-icon font-bold uppercase tracking-wider mb-0.5" id="lbl-installs"
+                style="display:none;">App Installs</span>
+            <div id="badge-installs"
+                class="items-center text-darkblue-accent bg-darkblue-accent/10 px-2 py-0.5 rounded-full hidden">
+                <i class="fa-solid fa-download text-[10px] mr-1"></i>
+                <span id="install-count-val" class="text-xs font-bold">-</span>
+            </div>
+        </div>
+
+        <button
+            class="clay-btn w-12 h-12 rounded-full flex items-center justify-center text-darkblue-icon transition-all active:scale-95">
+            <div class="relative">
+                <i class="fa-solid fa-bell text-xl"></i>
+                <!-- Puntino rosso per notifiche -->
+                <span class="absolute -top-1 -right-1 flex h-3 w-3">
+                    <span
+                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span
+                        class="relative inline-flex rounded-full h-3 w-3 bg-red-500 border-2 border-darkblue-base"></span>
+                </span>
+            </div>
+        </button>
+    </div>
+</header>
+
+<!-- Widget Lavoro Oggi -->
+<div id="dash-shifts-widget"
+    class="clay-card bg-darkblue-card rounded-clay p-4 mb-6 cursor-pointer active:scale-[0.98] transition-transform hidden"
+    onclick="navigateApp('lavoro')">
+    <div class="flex items-center gap-3 mb-3">
+        <div
+            class="w-8 h-8 rounded-full bg-darkblue-base flex items-center justify-center text-darkblue-accent shadow-inner">
+            <i class="fa-solid fa-briefcase text-xs"></i>
+        </div>
+        <h3 class="text-sm font-bold text-darkblue-heading tracking-wider">Turni di Oggi</h3>
+    </div>
+    <div id="dash-shifts-list" class="flex gap-2 w-full overflow-x-auto hidden-scrollbar pb-1">
+        <!-- Generato da JS -->
+    </div>
+</div>
+
+<!-- Widget Rapidi (Cards) -->
+<div class="grid grid-cols-2 gap-4 mb-8">
+
+    <!-- Widget Meteo/Temperatura -->
+    <div id="weather-widget"
+        class="clay-card bg-darkblue-card rounded-clay p-5 flex flex-col justify-between aspect-square cursor-pointer transition-transform active:scale-95"
+        onclick="fetchWeather()">
+        <i id="weather-icon" class="fa-solid fa-cloud-sun text-4xl text-yellow-400 mb-2 drop-shadow-md"></i>
+        <div>
+            <h3 id="weather-temp" class="text-2xl font-bold text-darkblue-heading">--°</h3>
+            <p id="weather-desc" class="text-xs text-darkblue-icon font-medium mb-1">Caricamento...</p>
+            <p id="weather-city" class="text-[10px] text-darkblue-accent font-bold uppercase tracking-wider truncate">
+            </p>
+        </div>
+    </div>
+
+    <!-- Widget Prossimo Appuntamento -->
+    <div id="dash-next-event"
+        class="clay-card bg-darkblue-card rounded-clay p-5 flex flex-col justify-between aspect-square cursor-pointer active:scale-95 transition-transform"
+        onclick="navigateApp('calendario');">
+        <div
+            class="w-10 h-10 rounded-full bg-darkblue-base text-darkblue-icon flex items-center justify-center mb-2 shadow-inner">
+            <i class="fa-solid fa-calendar-day"></i>
+        </div>
+        <div>
+            <h3 class="text-sm leading-tight text-darkblue-icon">Prossimo</h3>
+            <h3 class="text-lg leading-tight font-bold text-darkblue-heading mt-1">Nessuno</h3>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- PROMEMORIA FARMACI (Daily Meds)            -->
+<!-- ========================================== -->
+<section class="flex flex-col gap-4 mb-8" id="dash-meds-section" style="display: none;">
+    <div class="flex justify-between items-end">
+        <h2 class="text-xl font-bold text-darkblue-heading">Le mie terapie di oggi</h2>
+        <a href="#" class="text-xs font-bold text-darkblue-accent"
+            onclick="event.preventDefault(); window.navigateApp('salute');">Modulo Salute</a>
+    </div>
+    <div class="flex flex-col gap-3" id="dash-meds-list">
+        <!-- Verranno generati i bottoni delle pillole -->
+    </div>
+</section>
+
+<!-- ========================================== -->
+<!-- SPESA URGENTE                              -->
+<!-- ========================================== -->
+<section class="flex flex-col gap-4">
+    <div class="flex justify-between items-end">
+        <h2 class="text-xl font-bold text-darkblue-heading">Da comprare (Urgenti)</h2>
+        <a href="#" class="text-xs font-bold text-darkblue-accent"
+            onclick="event.preventDefault(); window.navigateApp('spesa');">Vedi tutto</a>
+    </div>
+
+    <!-- Lista item -->
+    <div class="flex flex-col gap-3" id="dash-urgenti-list">
+        <!-- Message -->
+        <div class="clay-item p-4 rounded-clay bg-darkblue-card text-center text-darkblue-icon text-sm">
+            <i>Caricamento urgenze...</i>
+        </div>
+    </div>
+
+    <!-- Pulsante Aggiungi Volante -->
+    <button onclick="navigateApp('spesa');"
+        class="clay-btn-primary w-full h-14 rounded-clay font-bold text-white text-lg flex items-center justify-center gap-3 transition-transform active:scale-95 mt-2">
+        <i class="fa-solid fa-cart-shopping"></i> Apri Modulo Spesa
+    </button>
+    </div>
+</section>
+
+<script>
+    // Piccolo script per aggiornare la data odierna
+    (function () {
+        const dateEl = document.getElementById('dash-date');
+        if (dateEl) {
+            const today = new Date();
+            const options = { day: 'numeric', month: 'short', year: 'numeric' };
+            dateEl.textContent = today.toLocaleDateString('it-IT', options);
+        }
+    })();
+</script>

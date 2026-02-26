@@ -1,0 +1,222 @@
+<!-- modules/salute.html -->
+<header class="flex justify-between items-center w-full mb-6 mt-2">
+    <div>
+        <h1 class="text-3xl font-bold text-darkblue-heading mb-1">Salute</h1>
+        <p class="text-sm font-medium opacity-80">Cartelle Mediche Famiglia</p>
+    </div>
+</header>
+
+<!-- Member Selector (Horizontal Scroll) -->
+<div class="w-full overflow-x-auto scrollbar-hide mb-6 pb-2">
+    <div class="flex gap-4 px-1" id="health-member-selector">
+        <!-- Generato via JS -->
+    </div>
+</div>
+
+<!-- Contenitore Principale Profilo (Nascosto finchè non si seleziona qualcuno) -->
+<div id="health-content-area" class="hidden flex-col gap-6">
+
+    <!-- Sezione: Profilo Generale -->
+    <section>
+        <div class="flex justify-between items-end mb-4">
+            <h2 class="text-xl font-bold text-darkblue-heading">Profilo Medico</h2>
+            <button id="btn-edit-health-profile"
+                class="text-darkblue-accent text-sm font-bold flex items-center gap-1 active:scale-95"><i
+                    class="fa-solid fa-pen"></i> Modifica</button>
+        </div>
+        <div class="clay-card bg-darkblue-card rounded-[2rem] p-6 relative overflow-hidden">
+            <!-- Dettagli generati dinamicamente -->
+            <div id="health-profile-display">
+                <div class="flex items-center gap-4 mb-4">
+                    <div
+                        class="w-16 h-16 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center shadow-inner">
+                        <i class="fa-solid fa-droplet text-2xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-darkblue-icon uppercase tracking-wide">Gruppo Sanguigno</p>
+                        <h3 class="text-2xl font-bold text-darkblue-heading" id="display-blood-type">--</h3>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <p class="text-xs font-bold text-darkblue-icon uppercase tracking-wide mb-2">Allergie & Patologie
+                    </p>
+                    <div class="flex flex-wrap gap-2" id="display-allergies">
+                        <span class="text-sm text-darkblue-icon italic">Nessun dato inserito.</span>
+                    </div>
+                </div>
+
+                <div>
+                    <p class="text-xs font-bold text-darkblue-icon uppercase tracking-wide mb-1">Medico Curante</p>
+                    <p class="text-darkblue-heading font-medium" id="display-primary-doctor">Non specificato</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sezione: Terapie & Farmaci -->
+    <section>
+        <div class="flex justify-between items-end mb-4">
+            <h2 class="text-xl font-bold text-darkblue-heading">Terapie Attive</h2>
+            <button id="btn-add-medication"
+                class="w-10 h-10 clay-btn-primary rounded-full flex items-center justify-center text-white active:scale-95"><i
+                    class="fa-solid fa-plus"></i></button>
+        </div>
+        <div id="health-medications-list" class="flex flex-col gap-3">
+            <!-- Card Farmaci via JS -->
+            <div class="text-center text-darkblue-icon text-sm italic py-4">Nessuna terapia attiva.</div>
+        </div>
+    </section>
+
+    <!-- Sezione: Storico Eventi -->
+    <section>
+        <div class="flex justify-between items-end mb-4">
+            <h2 class="text-xl font-bold text-darkblue-heading">Storico Eventi</h2>
+            <button id="btn-add-record"
+                class="w-10 h-10 clay-btn-primary rounded-full flex items-center justify-center text-white active:scale-95"><i
+                    class="fa-solid fa-plus"></i></button>
+        </div>
+
+        <div class="relative pl-6 border-l-2 border-darkblue-card ml-3 space-y-6" id="health-records-timeline">
+            <!-- Eventi via JS -->
+            <div class="text-darkblue-icon text-sm italic py-2">Nessun evento registrato.</div>
+        </div>
+    </section>
+
+</div>
+
+<!-- EMPTY STATE (Quando nessun membro è selezionato) -->
+<div id="health-empty-state" class="flex flex-col items-center justify-center py-20 text-center gap-4">
+    <div
+        class="w-24 h-24 rounded-full bg-darkblue-card flex items-center justify-center text-darkblue-icon opacity-50 shadow-inner">
+        <i class="fa-solid fa-hand-pointer text-4xl"></i>
+    </div>
+    <div>
+        <h3 class="text-lg font-bold text-darkblue-heading">Seleziona un Membro</h3>
+        <p class="text-sm text-darkblue-icon mt-1">Tocca l'icona di un familiare in alto per visualizzare la sua
+            cartella medica.</p>
+    </div>
+</div>
+
+<!-- ================= MODALS ================= -->
+
+<!-- Modal: Elaborazione Profilo -->
+<div id="modal-health-profile"
+    class="fixed inset-0 bg-darkblue-base/90 z-[60] flex flex-col justify-end transition-opacity duration-300 opacity-0 pointer-events-none">
+    <div class="clay-card bg-darkblue-card w-full max-w-md mx-auto rounded-t-[2.5rem] p-6 pb-24 transform translate-y-full transition-transform duration-300 h-[85vh] flex flex-col"
+        id="modal-content-health-profile">
+        <div class="flex justify-between items-center mb-6 shrink-0">
+            <h3 class="text-xl font-bold text-darkblue-heading">Modifica Profilo</h3>
+            <button id="btn-close-h-profile"
+                class="w-8 h-8 rounded-full flex items-center justify-center text-darkblue-icon hover:text-red-400">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <form id="form-health-profile" class="flex flex-col gap-4 overflow-y-auto scrollbar-hide pb-10 flex-1">
+            <div class="flex flex-col gap-2">
+                <label class="text-xs font-bold text-darkblue-icon uppercase ml-4">Gruppo Sanguigno</label>
+                <select id="hp-blood-type"
+                    class="clay-input w-full bg-darkblue-base h-12 px-6 rounded-3xl text-darkblue-text focus:outline-none appearance-none font-bold">
+                    <option value="Desconosciuto">Sconosciuto</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                    <option value="0+">0+</option>
+                    <option value="0-">0-</option>
+                </select>
+            </div>
+            <div class="flex flex-col gap-2">
+                <label class="text-xs font-bold text-darkblue-icon uppercase ml-4">Allergie (Separate da
+                    virgola)</label>
+                <input type="text" id="hp-allergies" placeholder="es. Penicillina, Polline" autocomplete="off"
+                    class="clay-input w-full bg-darkblue-base h-12 px-6 rounded-3xl text-darkblue-text placeholder-darkblue-icon/50 focus:outline-none">
+            </div>
+            <div class="flex flex-col gap-2">
+                <label class="text-xs font-bold text-darkblue-icon uppercase ml-4">Patologie (Separate da
+                    virgola)</label>
+                <input type="text" id="hp-chronic" placeholder="es. Asma, Diabete" autocomplete="off"
+                    class="clay-input w-full bg-darkblue-base h-12 px-6 rounded-3xl text-darkblue-text placeholder-darkblue-icon/50 focus:outline-none">
+            </div>
+            <div class="flex flex-col gap-2">
+                <label class="text-xs font-bold text-darkblue-icon uppercase ml-4">Medico Curante / Pediatra</label>
+                <input type="text" id="hp-doctor" placeholder="Nome ed eventuale telefono" autocomplete="off"
+                    class="clay-input w-full bg-darkblue-base h-12 px-6 rounded-3xl text-darkblue-text placeholder-darkblue-icon/50 focus:outline-none">
+            </div>
+
+            <button type="submit"
+                class="clay-btn-primary w-full h-12 rounded-3xl font-bold text-white mt-4 flex items-center justify-center gap-2 active:scale-95 shrink-0">
+                <i class="fa-solid fa-check"></i> Salva Profilo
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Aggiungi Farmaco -->
+<div id="modal-health-med"
+    class="fixed inset-0 bg-darkblue-base/90 z-[60] flex flex-col justify-end transition-opacity duration-300 opacity-0 pointer-events-none">
+    <div class="clay-card bg-darkblue-card w-full max-w-md mx-auto rounded-t-[2.5rem] p-6 pb-24 transform translate-y-full transition-transform duration-300"
+        id="modal-content-health-med">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-darkblue-heading">Nuova Terapia</h3>
+            <button id="btn-close-h-med"
+                class="w-8 h-8 rounded-full flex items-center justify-center text-darkblue-icon hover:text-red-400">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <form id="form-health-med" class="flex flex-col gap-4">
+            <input type="text" id="hm-name" placeholder="Nome farmaco (es. Tachipirina)" required autocomplete="off"
+                class="clay-input w-full bg-darkblue-base h-12 px-6 rounded-3xl text-darkblue-text placeholder-darkblue-icon/70 focus:outline-none">
+            <div class="flex gap-4">
+                <input type="text" id="hm-dosage" placeholder="Dos. (es. 500mg)" autocomplete="off"
+                    class="clay-input w-1/2 bg-darkblue-base h-12 px-6 rounded-3xl text-darkblue-text placeholder-darkblue-icon/70 focus:outline-none">
+                <input type="text" id="hm-freq" placeholder="Freq. (es. 2/giorno)" autocomplete="off"
+                    class="clay-input w-1/2 bg-darkblue-base h-12 px-6 rounded-3xl text-darkblue-text placeholder-darkblue-icon/70 focus:outline-none">
+            </div>
+
+            <button type="submit"
+                class="clay-btn-primary w-full h-12 rounded-3xl font-bold text-white mt-4 flex items-center justify-center gap-2 active:scale-95">
+                <i class="fa-solid fa-check"></i> Salva Terapia
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Aggiungi Evento Storico -->
+<div id="modal-health-record"
+    class="fixed inset-0 bg-darkblue-base/90 z-[60] flex flex-col justify-end transition-opacity duration-300 opacity-0 pointer-events-none">
+    <div class="clay-card bg-darkblue-card w-full max-w-md mx-auto rounded-t-[2.5rem] p-6 pb-24 transform translate-y-full transition-transform duration-300"
+        id="modal-content-health-record">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-darkblue-heading">Nuovo Evento</h3>
+            <button id="btn-close-h-record"
+                class="w-8 h-8 rounded-full flex items-center justify-center text-darkblue-icon hover:text-red-400">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <form id="form-health-record" class="flex flex-col gap-4">
+            <select id="hr-type" required
+                class="clay-input w-full bg-darkblue-base h-12 px-6 rounded-3xl text-darkblue-text focus:outline-none appearance-none font-bold">
+                <option value="Visita">Visita Medica</option>
+                <option value="Vaccino">Vaccino</option>
+                <option value="Esame">Esame Diagnostico</option>
+                <option value="Intervento">Intervento</option>
+                <option value="Malattia">Malattia</option>
+                <option value="Altro">Altro</option>
+            </select>
+            <input type="date" id="hr-date" required
+                class="clay-input w-full bg-darkblue-base h-12 px-6 rounded-3xl text-darkblue-text focus:outline-none [color-scheme:dark]">
+            <input type="text" id="hr-title" placeholder="Titolo (es. Visita Oculistica)" required autocomplete="off"
+                class="clay-input w-full bg-darkblue-base h-12 px-6 rounded-3xl text-darkblue-text placeholder-darkblue-icon/70 focus:outline-none">
+            <textarea id="hr-desc" placeholder="Dettagli ed esito (opzionale)..." rows="3"
+                class="clay-input w-full bg-darkblue-base p-4 rounded-3xl text-darkblue-text placeholder-darkblue-icon/70 focus:outline-none resize-none"></textarea>
+
+            <button type="submit"
+                class="clay-btn-primary w-full h-12 rounded-3xl font-bold text-white mt-4 flex items-center justify-center gap-2 active:scale-95">
+                <i class="fa-solid fa-check"></i> Registra Evento
+            </button>
+        </form>
+    </div>
+</div>

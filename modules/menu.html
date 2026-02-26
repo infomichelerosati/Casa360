@@ -1,0 +1,92 @@
+<!-- modules/menu.html -->
+<header class="flex justify-between items-center w-full mb-8 mt-2">
+    <div>
+        <h1 class="text-3xl font-bold text-darkblue-heading mb-1">Altro</h1>
+        <p class="text-sm font-medium opacity-80">Moduli e impostazioni</p>
+    </div>
+</header>
+
+<div class="grid grid-cols-2 gap-4">
+
+    <!-- Salute -->
+    <button onclick="window.navigateApp('salute');"
+        class="clay-card bg-darkblue-card rounded-clay p-6 flex flex-col items-center justify-center aspect-square active:scale-95 transition-transform group">
+        <div
+            class="w-16 h-16 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center mb-3 group-hover:bg-red-500 group-hover:text-white transition-colors duration-300 shadow-inner">
+            <i class="fa-solid fa-heart-pulse text-3xl"></i>
+        </div>
+        <h3 class="text-lg font-bold text-darkblue-heading">Salute</h3>
+    </button>
+
+    <!-- Veicoli -->
+    <button onclick="window.navigateApp('veicoli');"
+        class="clay-card bg-darkblue-card rounded-clay p-6 flex flex-col items-center justify-center aspect-square active:scale-95 transition-transform group">
+        <div
+            class="w-16 h-16 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center mb-3 group-hover:bg-blue-500 group-hover:text-white transition-colors duration-300 shadow-inner">
+            <i class="fa-solid fa-car text-3xl"></i>
+        </div>
+        <h3 class="text-lg font-bold text-darkblue-heading">Veicoli</h3>
+    </button>
+
+    <!-- Famiglia -->
+    <button onclick="window.navigateApp('famiglia');"
+        class="clay-card bg-darkblue-card rounded-clay p-6 flex flex-col items-center justify-center aspect-square active:scale-95 transition-transform group">
+        <div
+            class="w-16 h-16 rounded-full bg-orange-500/10 text-orange-500 flex items-center justify-center mb-3 group-hover:bg-orange-500 group-hover:text-white transition-colors duration-300 shadow-inner">
+            <i class="fa-solid fa-users text-3xl"></i>
+        </div>
+        <h3 class="text-lg font-bold text-darkblue-heading">Famiglia</h3>
+    </button>
+
+    <!-- Lavoro (Turni) -->
+    <button onclick="window.navigateApp('lavoro');"
+        class="clay-card bg-darkblue-card rounded-clay p-6 flex flex-col items-center justify-center aspect-square active:scale-95 transition-transform group">
+        <div
+            class="w-16 h-16 rounded-full bg-cyan-500/10 text-cyan-500 flex items-center justify-center mb-3 group-hover:bg-cyan-500 group-hover:text-white transition-colors duration-300 shadow-inner">
+            <i class="fa-solid fa-briefcase text-3xl"></i>
+        </div>
+        <h3 class="text-lg font-bold text-darkblue-heading">Lavoro</h3>
+    </button>
+
+    <!-- Documenti -->
+    <button onclick="window.navigateApp('documenti');"
+        class="clay-card bg-darkblue-card rounded-clay p-6 flex flex-col items-center justify-center aspect-square active:scale-95 transition-transform group">
+        <div
+            class="w-16 h-16 rounded-full bg-slate-500/10 text-slate-500 flex items-center justify-center mb-3 group-hover:bg-slate-500 group-hover:text-white transition-colors duration-300 shadow-inner">
+            <i class="fa-solid fa-folder-open text-3xl"></i>
+        </div>
+        <h3 class="text-lg font-bold text-darkblue-heading">Archivio</h3>
+    </button>
+
+    <!-- Animali -->
+    <button onclick="window.navigateApp('animali');"
+        class="clay-card bg-darkblue-card rounded-clay p-6 flex flex-col items-center justify-center aspect-square active:scale-95 transition-transform group">
+        <div
+            class="w-16 h-16 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center mb-3 group-hover:bg-amber-500 group-hover:text-white transition-colors duration-300 shadow-inner">
+            <i class="fa-solid fa-paw text-3xl"></i>
+        </div>
+        <h3 class="text-lg font-bold text-darkblue-heading">Animali</h3>
+    </button>
+
+    <!-- Scuola (Prossimamente) -->
+    <div
+        class="clay-card bg-darkblue-base border border-darkblue-card rounded-clay p-6 flex flex-col items-center justify-center aspect-square opacity-50 relative overflow-hidden">
+        <div class="absolute inset-0 bg-darkblue-base/50 backdrop-blur-[2px] z-10 flex items-center justify-center">
+            <span
+                class="bg-darkblue-card px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase text-darkblue-icon">Prossimamente</span>
+        </div>
+        <div
+            class="w-16 h-16 rounded-full bg-violet-500/10 text-violet-500 flex items-center justify-center mb-3 shadow-inner">
+            <i class="fa-solid fa-graduation-cap text-3xl"></i>
+        </div>
+        <h3 class="text-lg font-bold text-darkblue-icon">Scuola</h3>
+    </div>
+
+</div>
+
+<script>
+    function initMenu() {
+        console.log("Inizializzazione Modulo Menu Hub...");
+        // La gestione attiva della navbar è ora centralizzata in app.js -> navigateApp()
+    }
+</script>

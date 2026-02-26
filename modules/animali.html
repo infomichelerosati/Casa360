@@ -1,0 +1,311 @@
+<!-- modules/animali.html -->
+<header class="flex justify-between items-center w-full mb-6 mt-2">
+    <div>
+        <h1 class="text-3xl font-bold text-darkblue-heading pl-2 mb-1">🐾 Animali</h1>
+        <p class="text-sm font-medium text-darkblue-accent pl-2">I nostri amici a 4 zampe</p>
+    </div>
+    <button id="btn-add-pet"
+        class="clay-btn bg-darkblue-accent text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform">
+        <i class="fa-solid fa-plus text-xl"></i>
+    </button>
+</header>
+
+<div class="space-y-6" id="pets-container">
+    <!-- Contenuto dinamico inserito da JS -->
+    <div class="flex justify-center items-center h-48">
+        <i class="fa-solid fa-circle-notch fa-spin text-darkblue-accent text-3xl"></i>
+    </div>
+</div>
+
+<!-- Pet Details Modal (Full Screen) -->
+<div id="modal-pet-details"
+    class="fixed inset-0 bg-darkblue-base z-50 transform translate-x-full transition-transform duration-300 flex flex-col hidden">
+    <!-- Header -->
+    <div class="h-16 flex items-center justify-between px-4 clay-card bg-darkblue-card rounded-b-[2rem] z-10 shrink-0">
+        <button id="btn-close-pet-details"
+            class="w-10 h-10 flex items-center justify-center text-darkblue-icon active:scale-95 transition-transform">
+            <i class="fa-solid fa-chevron-left text-xl"></i>
+        </button>
+        <h2 class="text-xl font-bold text-darkblue-heading" id="pet-detail-name">Nome Pet</h2>
+        <div class="w-10"></div> <!-- Placeholder for layout balance -->
+    </div>
+
+    <!-- Body -->
+    <div class="flex-1 overflow-y-auto p-4 space-y-6 pb-24">
+
+        <!-- Info Card -->
+        <div class="clay-card bg-darkblue-card rounded-clay p-5">
+            <div class="flex items-center gap-4 mb-4">
+                <div class="w-16 h-16 rounded-full bg-darkblue-base flex items-center justify-center text-3xl clay-item shadow-inner"
+                    id="pet-detail-icon">
+                    🐶
+                </div>
+                <div>
+                    <p class="text-sm text-darkblue-icon font-medium" id="pet-detail-species-breed">Specie / Razza</p>
+                    <p class="text-xs text-darkblue-accent mt-1"><i class="fa-solid fa-cake-candles mr-1"></i> <span
+                            id="pet-detail-age">Età</span></p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="bg-darkblue-base rounded-2xl p-3 clay-item shadow-inner">
+                    <p class="text-xs text-darkblue-icon mb-1">Microchip</p>
+                    <p class="text-sm font-bold text-darkblue-heading truncate" id="pet-detail-chip">-</p>
+                </div>
+                <div class="bg-darkblue-base rounded-2xl p-3 clay-item shadow-inner">
+                    <p class="text-xs text-darkblue-icon mb-1">Passaporto</p>
+                    <p class="text-sm font-bold text-darkblue-heading" id="pet-detail-passport">-</p>
+                </div>
+            </div>
+            <div class="bg-darkblue-base rounded-2xl p-3 clay-item shadow-inner">
+                <p class="text-xs text-darkblue-icon mb-1">Note</p>
+                <p class="text-sm text-darkblue-heading" id="pet-detail-notes">-</p>
+            </div>
+        </div>
+
+        <!-- Reminders / Scadenze -->
+        <div class="clay-card bg-darkblue-card rounded-clay p-5">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-darkblue-heading"><i
+                        class="fa-regular fa-bell mr-2 text-amber-500"></i>Scadenze</h3>
+                <button id="btn-add-reminder"
+                    class="text-darkblue-accent text-sm font-bold active:scale-95 transition-transform"><i
+                        class="fa-solid fa-plus mr-1"></i>Aggiungi</button>
+            </div>
+            <div id="pet-reminders-list" class="space-y-3">
+                <!-- Reminders here -->
+            </div>
+        </div>
+
+        <!-- Medical Records / Storico Medico -->
+        <div class="clay-card bg-darkblue-card rounded-clay p-5">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-darkblue-heading"><i
+                        class="fa-solid fa-stethoscope mr-2 text-green-500"></i>Salute</h3>
+                <button id="btn-add-medical"
+                    class="text-darkblue-accent text-sm font-bold active:scale-95 transition-transform"><i
+                        class="fa-solid fa-plus mr-1"></i>Aggiungi</button>
+            </div>
+            <div id="pet-medical-list" class="space-y-3">
+                <!-- Medical records here -->
+            </div>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="pt-4 pb-8 flex justify-center">
+            <button id="btn-delete-pet"
+                class="text-red-500 font-bold text-sm bg-red-500/10 px-6 py-3 rounded-full active:scale-95 transition-transform">
+                <i class="fa-solid fa-trash-can mr-2"></i>Elimina Pet
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Aggiungi / Modifica Pet -->
+<div id="modal-pet-form"
+    class="fixed inset-0 bg-darkblue-base/90 z-[60] flex items-center justify-center transition-opacity duration-300 opacity-0 pointer-events-none px-4">
+    <div
+        class="clay-card bg-darkblue-card w-full max-w-sm rounded-[2.5rem] p-6 transform scale-95 transition-transform duration-300 max-h-[90vh] overflow-y-auto hidden-scrollbar">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-darkblue-heading" id="pet-form-title">Nuovo Amico</h3>
+            <button id="btn-close-pet-form"
+                class="w-8 h-8 flex items-center justify-center text-darkblue-icon bg-darkblue-base rounded-full clay-item active:scale-95 transition-transform">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <form id="form-pet" class="space-y-4">
+            <input type="hidden" id="pet-id">
+
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-darkblue-icon uppercase tracking-wider pl-4">Nome *</label>
+                <input type="text" id="pet-name" required
+                    class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 outline-none focus:ring-2 focus:ring-darkblue-accent transition-all clay-item shadow-inner">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-darkblue-icon uppercase tracking-wider pl-4">Specie *</label>
+                    <select id="pet-species" required
+                        class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 outline-none focus:ring-2 focus:ring-darkblue-accent transition-all clay-item shadow-inner appearance-none">
+                        <option value="Cane">🐶 Cane</option>
+                        <option value="Gatto">🐱 Gatto</option>
+                        <option value="Uccello">🐦 Uccello</option>
+                        <option value="Roditore">🐹 Roditore</option>
+                        <option value="Rettile">🦎 Rettile</option>
+                        <option value="Pesce">🐠 Pesce</option>
+                        <option value="Altro">🐾 Altro</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-darkblue-icon uppercase tracking-wider pl-4">Genere</label>
+                    <select id="pet-gender"
+                        class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 outline-none focus:ring-2 focus:ring-darkblue-accent transition-all clay-item shadow-inner appearance-none">
+                        <option value="Sconosciuto">N/D</option>
+                        <option value="M">Maschio (M)</option>
+                        <option value="F">Femmina (F)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-darkblue-icon uppercase tracking-wider pl-4">Razza</label>
+                <input type="text" id="pet-breed" placeholder="Es. Meticcio... "
+                    class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 outline-none focus:ring-2 focus:ring-darkblue-accent transition-all clay-item shadow-inner">
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-darkblue-icon uppercase tracking-wider pl-4">Data Nascita</label>
+                <input type="date" id="pet-birthdate"
+                    class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 outline-none focus:ring-2 focus:ring-darkblue-accent transition-all clay-item shadow-inner"
+                    style="color-scheme: dark;">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-darkblue-icon uppercase tracking-wider pl-4">Microchip</label>
+                    <input type="text" id="pet-chip"
+                        class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 outline-none focus:ring-2 focus:ring-darkblue-accent transition-all clay-item shadow-inner">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-darkblue-icon uppercase tracking-wider pl-4">Peso (kg)</label>
+                    <input type="number" id="pet-weight" step="0.1"
+                        class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 outline-none focus:ring-2 focus:ring-darkblue-accent transition-all clay-item shadow-inner">
+                </div>
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-darkblue-icon uppercase tracking-wider pl-4">Passaporto N°</label>
+                <input type="text" id="pet-passport"
+                    class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 outline-none focus:ring-2 focus:ring-darkblue-accent transition-all clay-item shadow-inner">
+            </div>
+
+            <div class="space-y-1 mb-2">
+                <label class="text-xs font-bold text-darkblue-icon uppercase tracking-wider pl-4">Note</label>
+                <textarea id="pet-notes" rows="2"
+                    class="w-full bg-darkblue-base text-darkblue-heading rounded-2xl p-4 outline-none focus:ring-2 focus:ring-darkblue-accent transition-all clay-item shadow-inner resize-none"></textarea>
+            </div>
+
+            <button type="submit" id="btn-save-pet"
+                class="clay-btn bg-darkblue-accent text-white w-full h-14 rounded-full font-bold text-lg flex items-center justify-center active:scale-95 transition-transform mt-6">
+                <i class="fa-solid fa-check mr-2"></i> Salva
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Form Scadenze -->
+<div id="modal-reminder-form"
+    class="fixed inset-0 bg-darkblue-base/90 z-[70] flex items-center justify-center transition-opacity duration-300 opacity-0 pointer-events-none px-4">
+    <div
+        class="clay-card bg-darkblue-card w-full max-w-sm rounded-[2.5rem] p-6 transform scale-95 transition-transform duration-300">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-darkblue-heading" id="reminder-form-title">Nuova Scadenza</h3>
+            <button id="btn-close-reminder-form"
+                class="w-8 h-8 flex items-center justify-center text-darkblue-icon bg-darkblue-base rounded-full clay-item active:scale-95 transition-transform">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <form id="form-reminder" class="space-y-4">
+            <input type="hidden" id="reminder-id">
+
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-darkblue-icon uppercase tracking-wider pl-4">Tipo Scadenza
+                    *</label>
+                <select id="reminder-type" required
+                    class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 outline-none focus:ring-2 focus:ring-darkblue-accent transition-all clay-item shadow-inner appearance-none">
+                    <option value="Vaccino">💉 Vaccino</option>
+                    <option value="Antiparassitario">🦟 Antiparassitario</option>
+                    <option value="Sverminazione">💊 Sverminazione</option>
+                    <option value="Visita Controllo">🩺 Visita di Controllo</option>
+                    <option value="Altro">📅 Altro</option>
+                </select>
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-darkblue-icon uppercase tracking-wider pl-4">Titolo *</label>
+                <input type="text" id="reminder-title" required placeholder="Es. Richiamo trivalente"
+                    class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 outline-none focus:ring-2 focus:ring-darkblue-accent transition-all clay-item shadow-inner">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-darkblue-icon uppercase tracking-wider pl-4">Data *</label>
+                    <input type="date" id="reminder-date" required
+                        class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 outline-none focus:ring-2 focus:ring-darkblue-accent transition-all clay-item shadow-inner"
+                        style="color-scheme: dark;">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-darkblue-icon uppercase tracking-wider pl-4">Ora</label>
+                    <input type="time" id="reminder-time"
+                        class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 outline-none focus:ring-2 focus:ring-darkblue-accent transition-all clay-item shadow-inner"
+                        style="color-scheme: dark;">
+                </div>
+            </div>
+
+            <button type="submit" id="btn-save-reminder"
+                class="clay-btn bg-darkblue-accent text-white w-full h-14 rounded-full font-bold text-lg flex items-center justify-center active:scale-95 transition-transform mt-6">
+                Salva
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Form Record Medico -->
+<div id="modal-medical-form"
+    class="fixed inset-0 bg-darkblue-base/90 z-[70] flex items-center justify-center transition-opacity duration-300 opacity-0 pointer-events-none px-4">
+    <div
+        class="clay-card bg-darkblue-card w-full max-w-sm rounded-[2.5rem] p-6 transform scale-95 transition-transform duration-300">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-darkblue-heading">Record Medico</h3>
+            <button id="btn-close-medical-form"
+                class="w-8 h-8 flex items-center justify-center text-darkblue-icon bg-darkblue-base rounded-full clay-item active:scale-95 transition-transform">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <form id="form-medical" class="space-y-4">
+            <input type="hidden" id="medical-id">
+
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-darkblue-icon uppercase tracking-wider pl-4">Tipo Intervento
+                    *</label>
+                <select id="medical-type" required
+                    class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 outline-none focus:ring-2 focus:ring-darkblue-accent transition-all clay-item shadow-inner appearance-none">
+                    <option value="Visita">🩺 Visita</option>
+                    <option value="Intervento">✂️ Intervento</option>
+                    <option value="Esame">🧪 Esame</option>
+                    <option value="Malattia">🤒 Malattia</option>
+                    <option value="Altro">📝 Altro</option>
+                </select>
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-darkblue-icon uppercase tracking-wider pl-4">Titolo / Referto
+                    *</label>
+                <input type="text" id="medical-title" required
+                    class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 outline-none focus:ring-2 focus:ring-darkblue-accent transition-all clay-item shadow-inner">
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-darkblue-icon uppercase tracking-wider pl-4">Data *</label>
+                <input type="date" id="medical-date" required
+                    class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 outline-none focus:ring-2 focus:ring-darkblue-accent transition-all clay-item shadow-inner"
+                    style="color-scheme: dark;">
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-darkblue-icon uppercase tracking-wider pl-4">Dettagli /
+                    Esito</label>
+                <textarea id="medical-desc" rows="2"
+                    class="w-full bg-darkblue-base text-darkblue-heading rounded-2xl p-4 outline-none focus:ring-2 focus:ring-darkblue-accent transition-all clay-item shadow-inner resize-none"></textarea>
+            </div>
+
+            <button type="submit" id="btn-save-medical"
+                class="clay-btn bg-darkblue-accent text-white w-full h-14 rounded-full font-bold text-lg flex items-center justify-center active:scale-95 transition-transform mt-6">
+                Salva
+            </button>
+        </form>
+    </div>
+</div>

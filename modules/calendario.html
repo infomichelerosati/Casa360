@@ -1,0 +1,101 @@
+<!-- modules/calendario.html -->
+<header class="flex justify-between items-center w-full mb-6 mt-2">
+    <div>
+        <h1 class="text-3xl font-bold text-darkblue-heading mb-1 select-none" id="cal-month-year">...</h1>
+        <p class="text-sm font-medium opacity-80" id="cal-events-counter">Caricamento eventi...</p>
+    </div>
+
+    <div class="flex gap-2">
+        <button id="btn-cal-prev"
+            class="clay-btn w-10 h-10 rounded-full flex items-center justify-center text-darkblue-icon transition-all active:scale-95">
+            <i class="fa-solid fa-chevron-left text-sm"></i>
+        </button>
+        <button id="btn-cal-next"
+            class="clay-btn w-10 h-10 rounded-full flex items-center justify-center text-darkblue-icon transition-all active:scale-95">
+            <i class="fa-solid fa-chevron-right text-sm"></i>
+        </button>
+        <button id="btn-add-event"
+            class="clay-btn-primary w-10 h-10 ml-2 rounded-full flex items-center justify-center text-white transition-all active:scale-95">
+            <i class="fa-solid fa-plus text-sm"></i>
+        </button>
+    </div>
+</header>
+
+<!-- Giorni della settimana -->
+<div class="grid grid-cols-7 gap-1 text-center mb-2">
+    <div class="text-xs font-bold text-darkblue-icon/60">L</div>
+    <div class="text-xs font-bold text-darkblue-icon/60">M</div>
+    <div class="text-xs font-bold text-darkblue-icon/60">M</div>
+    <div class="text-xs font-bold text-darkblue-icon/60">G</div>
+    <div class="text-xs font-bold text-darkblue-icon/60">V</div>
+    <div class="text-xs font-bold text-darkblue-accent/60">S</div>
+    <div class="text-xs font-bold text-red-400/60">D</div>
+</div>
+
+<!-- Griglia Calendario -->
+<div id="calendar-grid" class="grid grid-cols-7 gap-2 mb-6">
+    <!-- Le celle verranno generate da js/calendario.js -->
+</div>
+
+<!-- Lista Eventi del Giorno Selezionato -->
+<div>
+    <h2 class="text-sm font-bold text-darkblue-heading uppercase tracking-wider mb-4 opacity-70"
+        id="selected-date-title">Seleziona un giorno</h2>
+
+    <div id="day-events-list" class="flex flex-col gap-3">
+        <!-- Eventi generati via JS -->
+        <div class="clay-item p-4 rounded-clay bg-darkblue-card text-center text-darkblue-icon text-sm">
+            Nessun evento per questa giornata.
+        </div>
+    </div>
+</div>
+
+<!-- MODALE AGGIUNTA EVENTO (Nascosta di default) -->
+<div id="modal-add-event"
+    class="fixed inset-0 bg-darkblue-base/90 z-[60] flex flex-col justify-end transition-opacity duration-300 opacity-0 pointer-events-none">
+    <div class="clay-card bg-darkblue-card w-full max-w-md mx-auto rounded-t-[2.5rem] p-6 pb-24 transform translate-y-full transition-transform duration-300"
+        id="modal-content-event">
+
+        <div class="flex justify-between items-center mb-6">
+            <h3 id="modal-event-title" class="text-xl font-bold text-darkblue-heading">Nuovo Impegno</h3>
+            <button id="btn-close-modal"
+                class="w-8 h-8 rounded-full flex items-center justify-center text-darkblue-icon hover:text-red-400">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <form id="form-add-event" class="flex flex-col gap-4">
+            <!-- Titolo -->
+            <input type="text" id="ev-title" placeholder="Titolo evento (es. Dentista)" required autocomplete="off"
+                class="clay-input w-full bg-darkblue-base h-12 px-6 rounded-3xl text-darkblue-text placeholder-darkblue-icon/70 focus:outline-none focus:ring-2 focus:ring-darkblue-accent/50 outline-none border-none">
+
+            <!-- Tipo -->
+            <select id="ev-type"
+                class="clay-input w-full bg-darkblue-base h-12 px-6 rounded-3xl text-darkblue-text focus:outline-none focus:ring-2 focus:ring-darkblue-accent/50 outline-none border-none appearance-none">
+                <option value="Generico">Generico</option>
+                <option value="Visita Medica">Visita Medica</option>
+                <option value="Lavoro">Lavoro</option>
+                <option value="Scuola">Scuola</option>
+            </select>
+
+            <!-- Data & Orario -->
+            <div class="flex gap-2">
+                <input type="date" id="ev-date" required
+                    class="clay-input w-full bg-darkblue-base h-12 px-4 flex-1 rounded-3xl text-darkblue-text focus:outline-none focus:ring-2 outline-none border-none">
+                <input type="time" id="ev-time" required
+                    class="clay-input w-full bg-darkblue-base h-12 px-4 w-28 rounded-3xl text-darkblue-text focus:outline-none focus:ring-2 outline-none border-none">
+            </div>
+
+            <!-- Assegnato a (Simulato per ora, se avremo gli User Auth li prenderemo da DB) -->
+            <select id="ev-assigned"
+                class="clay-input w-full bg-darkblue-base h-12 px-6 rounded-3xl text-darkblue-text focus:outline-none focus:ring-2 outline-none border-none appearance-none">
+                <option value="">Per tutta la famiglia</option>
+            </select>
+
+            <button type="submit"
+                class="clay-btn-primary w-full h-12 rounded-3xl font-bold text-white mt-4 flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                <i class="fa-solid fa-calendar-check"></i> Salva Evento
+            </button>
+        </form>
+    </div>
+</div>

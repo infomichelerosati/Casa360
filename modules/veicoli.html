@@ -1,0 +1,137 @@
+<!-- modules/veicoli.html -->
+<header class="flex justify-between items-center w-full mb-6 mt-2">
+    <div>
+        <h1 class="text-3xl font-bold text-darkblue-heading mb-1">Veicoli</h1>
+        <p class="text-sm font-medium opacity-80">Garage di Famiglia</p>
+    </div>
+    <button id="btn-add-vehicle"
+        class="clay-btn-primary w-12 h-12 rounded-full flex items-center justify-center text-white transition-all active:scale-95">
+        <i class="fa-solid fa-plus text-lg"></i>
+    </button>
+</header>
+
+<!-- Lista Veicoli (Cards espansive) -->
+<section id="vehicles-list" class="flex flex-col gap-6">
+    <div class="text-center text-darkblue-icon py-8">Caricamento garage...</div>
+</section>
+
+<!-- MODALE AGGIUNTA VEICOLO -->
+<div id="modal-add-vehicle"
+    class="fixed inset-0 bg-darkblue-base/90 z-[60] flex flex-col justify-end transition-opacity duration-300 opacity-0 pointer-events-none">
+    <div class="clay-card bg-darkblue-card w-full max-w-md mx-auto rounded-t-[2.5rem] p-6 pb-24 transform translate-y-full transition-transform duration-300"
+        id="modal-content-vehicle">
+
+        <div class="flex justify-between items-center mb-6">
+            <h3 id="modal-vehicle-title" class="text-xl font-bold text-darkblue-heading">Nuovo Veicolo</h3>
+            <button id="btn-close-vehicle"
+                class="w-8 h-8 rounded-full flex items-center justify-center text-darkblue-icon hover:text-red-400">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <form id="form-add-vehicle" class="flex flex-col gap-4 max-h-[60vh] overflow-y-auto px-1 hide-scrollbar">
+
+            <div class="flex gap-2">
+                <!-- Tipo -->
+                <select id="veh-type"
+                    class="clay-input bg-darkblue-base h-12 px-4 rounded-3xl text-darkblue-text focus:outline-none focus:ring-2 outline-none border-none appearance-none w-1/3 text-center">
+                    <option value="Auto">Auto</option>
+                    <option value="Moto">Moto</option>
+                </select>
+                <!-- Nome -->
+                <input type="text" id="veh-name" placeholder="Es. Panda Mamma" required autocomplete="off"
+                    class="clay-input w-full bg-darkblue-base h-12 px-6 rounded-3xl text-darkblue-text placeholder-darkblue-icon/70 focus:outline-none outline-none border-none flex-1">
+            </div>
+
+            <!-- Targa -->
+            <input type="text" id="veh-plate" placeholder="Targa (Opzionale)" autocomplete="off"
+                style="text-transform: uppercase;"
+                class="clay-input w-full bg-darkblue-base h-12 px-6 rounded-3xl text-darkblue-text font-mono font-bold placeholder-darkblue-icon/70 focus:outline-none outline-none border-none text-center tracking-widest">
+
+            <hr class="border-darkblue-base my-2">
+            <h4 class="text-sm font-bold text-darkblue-heading ml-2">Scadenze</h4>
+
+            <!-- Assicurazione -->
+            <div class="flex items-center gap-3">
+                <div
+                    class="w-10 h-10 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div class="flex-1">
+                    <label class="text-xs font-bold text-darkblue-icon ml-2">Assicurazione</label>
+                    <input type="date" id="veh-ins" required
+                        class="clay-input w-full bg-darkblue-base h-10 px-4 mt-1 rounded-3xl text-darkblue-text focus:outline-none border-none">
+                </div>
+            </div>
+
+            <!-- Bollo -->
+            <div class="flex items-center gap-3 mt-1">
+                <div
+                    class="w-10 h-10 rounded-full bg-yellow-500/10 text-yellow-400 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                </div>
+                <div class="flex-1">
+                    <label class="text-xs font-bold text-darkblue-icon ml-2">Bollo Auto/Moto</label>
+                    <input type="date" id="veh-tax" required
+                        class="clay-input w-full bg-darkblue-base h-10 px-4 mt-1 rounded-3xl text-darkblue-text focus:outline-none border-none">
+                </div>
+            </div>
+
+            <!-- Revisione -->
+            <div class="flex items-center gap-3 mt-1">
+                <div
+                    class="w-10 h-10 rounded-full bg-green-500/10 text-green-400 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-wrench"></i>
+                </div>
+                <div class="flex-1">
+                    <label class="text-xs font-bold text-darkblue-icon ml-2">Revisione</label>
+                    <input type="date" id="veh-rev" required
+                        class="clay-input w-full bg-darkblue-base h-10 px-4 mt-1 rounded-3xl text-darkblue-text focus:outline-none border-none">
+                </div>
+            </div>
+
+            <!-- Toggle impianto GPL -->
+            <label class="flex items-center gap-3 mt-2 px-2 cursor-pointer group">
+                <div class="relative flex items-center justify-center w-6 h-6">
+                    <input type="checkbox" id="veh-is-gpl"
+                        class="clay-checkbox peer appearance-none w-6 h-6 rounded-full bg-darkblue-base cursor-pointer checked:bg-darkblue-accent transition-all">
+                    <i
+                        class="fa-solid fa-check absolute text-white text-xs opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity"></i>
+                </div>
+                <span
+                    class="text-sm font-bold text-darkblue-heading group-hover:text-darkblue-accent transition-colors">Veicolo
+                    a GPL / Metano</span>
+            </label>
+
+            <!-- Scadenza Bombola GPL (Nascosta di default) -->
+            <div id="gpl-expiry-container"
+                class="flex items-center gap-3 mt-1 hidden max-h-0 overflow-hidden transition-all duration-300">
+                <div
+                    class="w-10 h-10 rounded-full bg-purple-500/10 text-purple-400 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-fire-burner"></i>
+                </div>
+                <div class="flex-1">
+                    <label class="text-xs font-bold text-darkblue-icon ml-2">Scadenza Impianto / Bombola</label>
+                    <input type="date" id="veh-gpl-date"
+                        class="clay-input w-full bg-darkblue-base h-10 px-4 mt-1 rounded-3xl text-darkblue-text focus:outline-none border-none">
+                </div>
+            </div>
+
+            <button type="submit"
+                class="clay-btn-primary w-full h-12 rounded-3xl font-bold text-white mt-6 mb-2 flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                <i class="fa-solid fa-check"></i> Salva Veicolo
+            </button>
+        </form>
+    </div>
+</div>
+<!-- Custom Scrollbar Hide logic just for this class if needed -->
+<style>
+    .hide-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+
+    .hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+</style>
