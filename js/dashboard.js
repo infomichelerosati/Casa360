@@ -54,16 +54,14 @@ async function initGridStack() {
             if (window.isGridEditing) {
                 // Entra in modalità EDIT
                 dashGrid.setStatic(false);
-                editBtn.innerHTML = '<i class="fa-solid fa-check mr-1"></i> Salva Layout';
-                editBtn.classList.replace('bg-darkblue-base', 'bg-darkblue-accent');
-                editBtn.classList.replace('text-darkblue-icon', 'text-white');
+                editBtn.innerHTML = '<i class="fa-solid fa-check text-xl"></i>';
+                editBtn.classList.replace('text-darkblue-icon', 'text-green-500');
                 document.querySelectorAll('.grid-stack-item-content > .clay-card').forEach(c => c.classList.add('animate-pulse', 'border-2', 'border-darkblue-accent/50'));
             } else {
                 // Salva ed esce da modalità EDIT
                 dashGrid.setStatic(true);
-                editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square mr-1"></i> Modifica Dashboard';
-                editBtn.classList.replace('bg-darkblue-accent', 'bg-darkblue-base');
-                editBtn.classList.replace('text-white', 'text-darkblue-icon');
+                editBtn.innerHTML = '<i class="fa-solid fa-gear text-xl"></i>';
+                editBtn.classList.replace('text-green-500', 'text-darkblue-icon');
                 document.querySelectorAll('.grid-stack-item-content > .clay-card').forEach(c => c.classList.remove('animate-pulse', 'border-2', 'border-darkblue-accent/50'));
 
                 // Salva layout su Subapase
@@ -128,9 +126,16 @@ async function loadGridLayout() {
         }
 
         if (data && data.dashboard_layout && Array.isArray(data.dashboard_layout) && data.dashboard_layout.length > 0) {
-            // Carica layout salvato dalla colonna JSONB
-            dashGrid.load(data.dashboard_layout);
-            console.log("Layout custom caricato:", data.dashboard_layout);
+            // Aggiorna le coordinate dei nodi esistenti senza distruggere i contenuti HTML generati al momento (evita il flash e la scomparsa!)
+            dashGrid.batchUpdate();
+            data.dashboard_layout.forEach(savedNode => {
+                const el = document.querySelector(`[gs-id="${savedNode.id}"]`);
+                if (el) {
+                    dashGrid.update(el, { x: savedNode.x, y: savedNode.y, w: savedNode.w, h: savedNode.h });
+                }
+            });
+            dashGrid.commit();
+            console.log("Layout custom sincronizzato:", data.dashboard_layout);
         }
     } catch (e) {
         console.warn("Impossibile caricare layout", e);
