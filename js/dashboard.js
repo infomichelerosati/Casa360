@@ -48,8 +48,8 @@ async function initGridStack() {
 
     // Inizializza la Dock (Pannello moduli nascosti)
     window.dockGrid = GridStack.init({
-        cellHeight: 80,
-        margin: 10,
+        cellHeight: 60,
+        margin: 5,
         column: 4, // Dock ha sempre 4 colonne fisse
         disableOneColumnMode: true,
         float: true,
@@ -60,6 +60,36 @@ async function initGridStack() {
 
     const editBtn = document.getElementById('btn-edit-dashboard');
     const dockContainer = document.getElementById('dashboard-dock-wrapper');
+
+    // Eventi per rendere i Widget minuscoli come "icone" quando entrano nel Dock
+    if (window.dockGrid && dashGrid) {
+        window.dockGrid.on('added', function (e, items) {
+            items.forEach(item => {
+                if (!item.el) return;
+                item.el.setAttribute('data-orig-w', item.w);
+                item.el.setAttribute('data-orig-h', item.h);
+                window.dockGrid.update(item.el, { w: 1, h: 1 });
+                item.el.classList.add('in-dock');
+            });
+        });
+
+        dashGrid.on('added', function (e, items) {
+            items.forEach(item => {
+                if (!item.el) return;
+                if (item.el.classList.contains('in-dock')) {
+                    let ow = item.el.getAttribute('data-orig-w') || 2;
+                    let oh = item.el.getAttribute('data-orig-h') || 2;
+                    dashGrid.update(item.el, { w: parseInt(ow), h: parseInt(oh) });
+                    item.el.classList.remove('in-dock');
+                }
+            });
+            saveGridLayout(); // Auto-save on addition
+        });
+
+        window.dockGrid.on('removed', function () { saveGridLayout(); });
+        dashGrid.on('change', function () { saveGridLayout(); });
+        dashGrid.on('removed', function () { saveGridLayout(); });
+    }
 
     if (editBtn) {
         editBtn.addEventListener('click', async () => {
@@ -84,7 +114,7 @@ async function initGridStack() {
                 editBtn.classList.replace('text-green-500', 'text-darkblue-icon');
                 document.querySelectorAll('.grid-stack-item-content > .clay-card').forEach(c => c.classList.remove('animate-pulse', 'border-2', 'border-darkblue-accent/50'));
 
-                // Salva layout su Subapase
+                // Salva layout su Subapase per sicurezza terminale
                 await saveGridLayout();
             }
         });
@@ -96,9 +126,14 @@ async function initGridStack() {
 
 async function saveGridLayout() {
     if (!dashGrid || !window.supabase) return;
+
+    // Variabile per evitare overlapping dei salvataggi (Debounce basico)
+    if (window._isSavingLayout) return;
+    window._isSavingLayout = true;
+
     try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user) { window._isSavingLayout = false; return; }
 
         // Estrai il layout corrente usando grid.save()
         // NOTA: Per usare un identificatore persistente usiamo gli attributi gs-id
@@ -107,23 +142,26 @@ async function saveGridLayout() {
 
         // Pulisce l'oggetto eliminando il contenuto html e tenendo solo id, state (hidden) e geometrie
         const layoutData = layoutNodes.map(node => ({
-            id: node.id,
+            id: node.id || (node.el ? node.el.getAttribute('gs-id') : null),
             x: node.x,
             y: node.y,
             w: node.w,
             h: node.h,
             hidden: false
-        }));
+        })).filter(n => n.id);
 
         dockNodes.forEach(node => {
-            layoutData.push({
-                id: node.id,
-                x: node.x || 0,
-                y: node.y || 0,
-                w: node.w,
-                h: node.h,
-                hidden: true
-            });
+            const trueId = node.id || (node.el ? node.el.getAttribute('gs-id') : null);
+            if (trueId) {
+                layoutData.push({
+                    id: trueId,
+                    x: node.x || 0,
+                    y: node.y || 0,
+                    w: node.el ? (parseInt(node.el.getAttribute('data-orig-w')) || 2) : 2,
+                    h: node.el ? (parseInt(node.el.getAttribute('data-orig-h')) || 2) : 2,
+                    hidden: true
+                });
+            }
         });
 
         const { error } = await supabase
@@ -133,10 +171,11 @@ async function saveGridLayout() {
 
         if (error) throw error;
 
-        console.log("Layout dashboard GridStack salvato con successo!", layoutData);
-        if (window.showToast) window.showToast('Layout Salvato', 'La tua dashboard è stata salvata.', 'fa-check', 'text-green-500');
+        console.log("Layout dashboard GridStack auto-salvato con successo!", layoutData);
     } catch (e) {
         console.error("Errore salvataggio layout dashboard:", e);
+    } finally {
+        window._isSavingLayout = false;
     }
 }
 

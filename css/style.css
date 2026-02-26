@@ -63,6 +63,38 @@
     margin-right: -5px !important;
 }
 
+#dashboard-dock {
+    max-height: 200px;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+
 #dashboard-dock .grid-stack-item {
     position: relative !important;
+}
+
+/* Modelli "Icona" per i Widget che finiscono nell'Armadio (Dock) */
+.in-dock .grid-stack-item-content>div {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+}
+
+.in-dock .grid-stack-item-content i {
+    font-size: 2.2rem !important;
+    margin: 0 !important;
+    width: auto !important;
+    text-align: center !important;
+}
+
+.in-dock .grid-stack-item-content h2,
+.in-dock .grid-stack-item-content h3,
+.in-dock .grid-stack-item-content p,
+.in-dock .grid-stack-item-content button,
+.in-dock .grid-stack-item-content a,
+.in-dock .grid-stack-item-content span:not(.font-bold),
+.in-dock .grid-stack-item-content section>div:not(:first-child),
+.in-dock .grid-stack-item-content .weather-inner>div {
+    display: none !important;
 }
