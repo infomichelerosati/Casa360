@@ -126,8 +126,9 @@
                 class="nav-item flex flex-col items-center justify-center w-14 h-14 transition-all text-darkblue-icon relative"
                 data-module="spesa">
                 <i class="fa-solid fa-cart-shopping text-xl mb-0.5 pointer-events-none"></i>
-                <span class="absolute top-[10px] right-[12px] w-2 h-2 bg-red-500 rounded-full"></span>
-                <!-- Notifica badge -->
+                <span id="nav-badge-spesa"
+                    class="absolute top-[10px] right-[12px] w-2 h-2 bg-red-500 rounded-full hidden"></span>
+                <!-- Notifica badge diventerà visibile dinamicamente -->
             </a>
 
             <!-- Finanze Item -->
@@ -169,6 +170,12 @@
                     class="clay-btn bg-red-500/10 text-red-500 w-full h-12 rounded-3xl font-bold flex items-center justify-center active:scale-95 transition-transform">Procedi</button>
             </div>
         </div>
+    </div>
+
+    <!-- Global Toast / Realtime Notification Container -->
+    <div id="toast-container"
+        class="fixed top-4 left-0 right-0 z-[100] flex flex-col items-center pointer-events-none gap-2 px-4">
+        <!-- I toasts verranno iniettati tramite JS qui -->
     </div>
 
     <!-- Supabase SDK e App Data -->

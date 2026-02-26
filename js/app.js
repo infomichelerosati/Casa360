@@ -66,9 +66,19 @@ async function renderApp(session) {
             console.error("Errore verifica profilo famiglia:", err);
         }
 
+        // Inizializza Listeners Realtime per Notifiche
+        initRealtimeSubscriptions();
+
         // Mostra nav e carica la dashboard
         if (nav) nav.classList.remove('hidden');
         loadModule('dashboard');
+
+        // Carica le notifiche globali all'avvio
+        setTimeout(() => {
+            if (typeof window.updateNotificationBadges === 'function') {
+                window.updateNotificationBadges();
+            }
+        }, 1000);
     }
 }
 
@@ -252,4 +262,236 @@ window.showConfirmModal = function (title, message, onConfirmCallback) {
         close();
         if (onConfirmCallback) onConfirmCallback();
     });
+};
+
+// ==========================================
+// GLOBAL NOTIFICATIONS LOGIC
+// ==========================================
+
+// Variabile globale per mantenere in memoria l'ultima lista di notifiche
+window.globalNotifications = [];
+
+window.updateNotificationBadges = async function () {
+    if (!window.supabase) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    try {
+        const familyId = await window.getUserFamilyId();
+        if (!familyId) return;
+
+        let notifications = [];
+
+        // 1. Spesa Urgente (da comprare)
+        const { data: spesaUrgent, error: errSpesa } = await supabase
+            .from('shopping_list')
+            .select('*')
+            .eq('family_id', familyId)
+            .eq('is_urgent', true)
+            .eq('is_bought', false);
+
+        if (!errSpesa && spesaUrgent && spesaUrgent.length > 0) {
+            spesaUrgent.forEach(item => {
+                notifications.push({
+                    type: 'spesa',
+                    title: 'Spesa Urgente',
+                    msg: item.item_name,
+                    icon: 'fa-cart-shopping',
+                    color: 'text-orange-500 bg-orange-500/10 border-orange-500/20'
+                });
+            });
+        }
+
+        // 2. Eventi Calendario Oggi
+        const todayLocal = new Date().toLocaleDateString('en-CA');
+        const endOfDay = todayLocal + "T23:59:59Z";
+        const { data: eventiOggi, error: errEventi } = await supabase
+            .from('calendar_events')
+            .select('*')
+            .eq('family_id', familyId)
+            .gte('start_time', todayLocal + "T00:00:00Z")
+            .lte('start_time', endOfDay);
+
+        if (!errEventi && eventiOggi && eventiOggi.length > 0) {
+            eventiOggi.forEach(ev => {
+                notifications.push({
+                    type: 'calendario',
+                    title: 'Evento Oggi',
+                    msg: ev.title,
+                    icon: 'fa-calendar-day',
+                    color: 'text-blue-500 bg-blue-500/10 border-blue-500/20'
+                });
+            });
+        }
+
+        window.globalNotifications = notifications;
+
+        // AGGIORNAMENTO UI:
+        const spesaBadge = document.getElementById('nav-badge-spesa');
+        if (spesaBadge) {
+            // Conta quante notifiche di tipo "spesa" esistono
+            const constSpesa = notifications.filter(n => n.type === 'spesa').length;
+            if (constSpesa > 0) {
+                spesaBadge.classList.remove('hidden');
+            } else {
+                spesaBadge.classList.add('hidden');
+            }
+        }
+
+        const bellBadge = document.getElementById('dash-badge-bell');
+        if (bellBadge) {
+            // Se c'è ALMENO UNA notifica di qualsiasi tipo, "suona" la campanella
+            if (notifications.length > 0) {
+                bellBadge.classList.remove('hidden');
+            } else {
+                bellBadge.classList.add('hidden');
+            }
+        }
+
+        // Se il modale notifiche è aperto, ri-renderizza
+        const modal = document.getElementById('modal-notifications');
+        if (modal && !modal.classList.contains('opacity-0')) {
+            window.renderNotificationsList();
+        }
+
+    } catch (err) {
+        console.error("Errore updateNotificationBadges", err);
+    }
+};
+
+window.renderNotificationsList = function () {
+    const listContainer = document.getElementById('notifications-list');
+    if (!listContainer) return;
+
+    if (window.globalNotifications.length === 0) {
+        listContainer.innerHTML = '<div class="text-center text-darkblue-icon text-sm py-10">Tutto tranquillo! Nessuna notifica.</div>';
+        return;
+    }
+
+    listContainer.innerHTML = '';
+    window.globalNotifications.forEach(notif => {
+        const html = `
+            <div class="clay-card border ${notif.color.split(' ')[2]} rounded-2xl p-4 flex items-center gap-4 cursor-pointer hover:brightness-110 active:scale-95 transition-all"
+                 onclick="closeNotificationsPanel(); setTimeout(() => navigateApp('${notif.type}'), 200)">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-inner ${notif.color.replace(/border-[\w-\/]+/, '')}">
+                    <i class="fa-solid ${notif.icon}"></i>
+                </div>
+                <div>
+                     <p class="text-[10px] font-bold uppercase tracking-widest text-darkblue-icon">${notif.title}</p>
+                     <p class="text-white font-medium break-words">${notif.msg}</p>
+                </div>
+            </div>
+        `;
+        listContainer.insertAdjacentHTML('beforeend', html);
+    });
+};
+
+// Modifica window.navigateApp per lanciare la verifica delle notifiche ad ogni cambio modulo
+const originalNavigateApp = window.navigateApp;
+window.navigateApp = function (moduleName) {
+    originalNavigateApp(moduleName);
+    window.updateNotificationBadges();
+};
+
+// ==========================================
+// SUPABASE REALTIME SUBSCRIPTIONS E TOASTS
+// ==========================================
+
+let realtimeChannel = null;
+
+async function initRealtimeSubscriptions() {
+    if (!window.supabase) return;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    try {
+        const familyId = await window.getUserFamilyId();
+        if (!familyId) return;
+
+        // Se c'è già un canale, disiscriviti per evitare duplicati
+        if (realtimeChannel) {
+            await supabase.removeChannel(realtimeChannel);
+        }
+
+        // Crea un canale per ascoltare i cambiamenti sulla famiglia corrente
+        realtimeChannel = supabase.channel('family_updates')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'shopping_list',
+                    filter: `family_id=eq.${familyId}`
+                },
+                (payload) => {
+                    const item = payload.new;
+                    // Se l'abbiamo creato noi stessi, ignoralo (opzionale, semplificato: mostra a tutti)
+                    if (item.added_by !== user.id) {
+                        showToast(`🛒 Nuova spesa: ${item.item_name}`, 'Qualcuno ha aggiunto un articolo alla lista.', 'fa-cart-shopping', 'text-orange-500');
+                        window.updateNotificationBadges();
+                    }
+                }
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'calendar_events',
+                    filter: `family_id=eq.${familyId}`
+                },
+                (payload) => {
+                    const ev = payload.new;
+                    if (ev.created_by !== user.id) {
+                        showToast(`📅 Nuovo Evento: ${ev.title}`, 'Controlla il calendario per i dettagli.', 'fa-calendar-day', 'text-blue-500');
+                        window.updateNotificationBadges();
+                    }
+                }
+            )
+            .subscribe((status) => {
+                console.log("Stato Sottoscrizione Realtime:", status);
+            });
+
+    } catch (err) {
+        console.error("Errore attivazione realtime:", err);
+    }
+}
+
+// Funzione globale per mostrare una notifica "Toast" a comparsa dal basso/alto
+window.showToast = function (title, message, iconClass, colorClass) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toastId = 'toast-' + Date.now();
+    const toastHtml = `
+        <div id="${toastId}" class="clay-card bg-darkblue-card rounded-[2rem] p-4 flex items-center gap-4 shadow-2xl transform -translate-y-full opacity-0 pointer-events-auto transition-all duration-500 w-full max-w-sm mb-2 border border-darkblue-base/50">
+            <div class="w-10 h-10 rounded-full bg-darkblue-base flex items-center justify-center shrink-0 shadow-inner ${colorClass}">
+                <i class="fa-solid ${iconClass}"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+                <h4 class="text-xs font-bold text-darkblue-heading truncate">${title}</h4>
+                <p class="text-[10px] text-darkblue-icon truncate">${message}</p>
+            </div>
+            <button onclick="document.getElementById('${toastId}').remove()" class="text-darkblue-icon active:scale-95 transition-transform">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    `;
+
+    container.insertAdjacentHTML('afterbegin', toastHtml);
+    const toastEl = document.getElementById(toastId);
+
+    // Entrata
+    setTimeout(() => {
+        toastEl.classList.remove('-translate-y-full', 'opacity-0');
+    }, 50);
+
+    // Uscita automatica dopo 4 secondi
+    setTimeout(() => {
+        if (toastEl) {
+            toastEl.classList.add('-translate-y-full', 'opacity-0');
+            setTimeout(() => toastEl.remove(), 500);
+        }
+    }, 4000);
 };
