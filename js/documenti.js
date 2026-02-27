@@ -185,12 +185,26 @@ function setupDocModalEvents() {
     document.getElementById('btn-back-step').addEventListener('click', () => {
         step2.classList.add('hidden');
         step1.classList.remove('hidden');
+
+        const modalContent = document.getElementById('modal-content-doc-upload');
+        if (modalContent) {
+            modalContent.classList.remove('h-[95vh]');
+            modalContent.classList.add('h-auto', 'max-h-[85vh]');
+        }
+
         if (docCropper) docCropper.destroy();
     });
 
     document.getElementById('btn-crop-cancel').addEventListener('click', () => {
         step2.classList.add('hidden');
         step1.classList.remove('hidden');
+
+        const modalContent = document.getElementById('modal-content-doc-upload');
+        if (modalContent) {
+            modalContent.classList.remove('h-[95vh]');
+            modalContent.classList.add('h-auto', 'max-h-[85vh]');
+        }
+
         if (docCropper) docCropper.destroy();
     });
 
@@ -252,9 +266,15 @@ function initCropperStep() {
     const step2 = document.getElementById('doc-upload-step-2');
     const imageElement = document.getElementById('cropper-image');
 
-    // Assicuriamoci che l'interfaccia passi allo step 2
+    const modalContent = document.getElementById('modal-content-doc-upload');
+
+    // Assicuriamoci che l'interfaccia passi allo step 2 ed espanda il modale
     if (step1) step1.classList.add('hidden');
     if (step2) step2.classList.remove('hidden');
+    if (modalContent) {
+        modalContent.classList.remove('h-auto', 'max-h-[85vh]');
+        modalContent.classList.add('h-[95vh]');
+    }
 
     // Clean up previous cropper
     if (docCropper) {
