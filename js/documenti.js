@@ -262,9 +262,8 @@ function initCropperStep() {
         docCropper = null;
     }
 
-    // Revoke old blob URL to free memory
-    if (imageElement.src && imageElement.src.startsWith('blob:')) {
-        URL.revokeObjectURL(imageElement.src);
+    if (imageElement.src && imageElement.src.startsWith('data:')) {
+        imageElement.src = ''; // reset memory
     }
 
     if (!docCurrentFile || docCurrentFile.size === 0) {
@@ -305,13 +304,19 @@ function initCropperStep() {
     };
 
     try {
-        // Use object URL instead of FileReader base64 to prevent mobile RAM crashes with huge photos
-        imageElement.src = '';
-        setTimeout(() => {
-            imageElement.src = URL.createObjectURL(docCurrentFile);
-        }, 50); // Allow DOM reflow before setting src to get correct container dimensions
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            // Assegna il dataURL, e aspetta il layout DOM
+            setTimeout(() => {
+                imageElement.src = e.target.result;
+            }, 50);
+        };
+        reader.onerror = () => {
+            alert("Errore durante la lettura del file locale.");
+        };
+        reader.readAsDataURL(docCurrentFile);
     } catch (err) {
-        alert("Errore durante l'accesso al file: " + err.message);
+        alert("Errore critico Lettura File: " + err.message);
     }
 }
 
