@@ -130,7 +130,7 @@ function setupDocModalEvents() {
 
     document.getElementById('btn-add-document').addEventListener('click', openModal);
     document.getElementById('btn-close-doc-upload').addEventListener('click', closeModal);
-    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+    // modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
 
     // File Selection
     const fileInput = document.getElementById('doc-file-input');
