@@ -250,11 +250,11 @@ function resetFileInfoUI() {
 function initCropperStep() {
     const step1 = document.getElementById('doc-upload-step-1');
     const step2 = document.getElementById('doc-upload-step-2');
-
-    step1.classList.add('hidden');
-    step2.classList.remove('hidden');
-
     const imageElement = document.getElementById('cropper-image');
+
+    // Assicuriamoci che l'interfaccia passi allo step 2
+    if (step1) step1.classList.add('hidden');
+    if (step2) step2.classList.remove('hidden');
 
     // Clean up previous cropper
     if (docCropper) {
@@ -274,27 +274,29 @@ function initCropperStep() {
     }
 
     imageElement.onload = () => {
-        // Wait for the step2 div to be visible in the DOM
-        setTimeout(() => {
-            try {
-                docCropper = new Cropper(imageElement, {
-                    viewMode: 1,
-                    dragMode: 'crop', // Lascia che l'utente disegni/ridimensioni il box invece di spostare la foto
-                    autoCropArea: 0.9,
-                    restore: false,
-                    guides: true,
-                    center: true,
-                    highlight: true,
-                    cropBoxMovable: true,
-                    cropBoxResizable: true,
-                    toggleDragModeOnDblclick: false,
-                    zoomable: false // Evita conflitti di pinch-to-zoom su mobile
-                });
-            } catch (err) {
-                console.error("Cropper initialization failed:", err);
-                alert("Errore caricamento strumento di ritaglio.");
-            }
-        }, 150);
+        // Wait for the step2 div to be fully painted in the DOM
+        requestAnimationFrame(() => {
+            setTimeout(() => {
+                try {
+                    docCropper = new Cropper(imageElement, {
+                        viewMode: 1,
+                        dragMode: 'crop',
+                        autoCropArea: 0.9,
+                        restore: false,
+                        guides: true,
+                        center: true,
+                        highlight: true,
+                        cropBoxMovable: true,
+                        cropBoxResizable: true,
+                        toggleDragModeOnDblclick: false,
+                        zoomable: false
+                    });
+                } catch (err) {
+                    console.error("Cropper initialization failed:", err);
+                    alert("Errore caricamento strumento di ritaglio.");
+                }
+            }, 250); // Generous timeout for slow mobile rendering transitions
+        });
     };
 
     imageElement.onerror = () => {
@@ -305,7 +307,9 @@ function initCropperStep() {
     try {
         // Use object URL instead of FileReader base64 to prevent mobile RAM crashes with huge photos
         imageElement.src = '';
-        imageElement.src = URL.createObjectURL(docCurrentFile);
+        setTimeout(() => {
+            imageElement.src = URL.createObjectURL(docCurrentFile);
+        }, 50); // Allow DOM reflow before setting src to get correct container dimensions
     } catch (err) {
         alert("Errore durante l'accesso al file: " + err.message);
     }
