@@ -202,17 +202,23 @@ function setupDocModalEvents() {
                 maxHeight: 1600
             });
 
-            // Compress to JPEG Blob
-            canvas.toBlob(async (blob) => {
-                if (!blob) throw new Error("Errore generazione immagine");
+            if (!canvas) {
+                throw new Error("Errore: impossibile generare l'area di ritaglio.");
+            }
 
-                // Crea un nuovo file dal blob
-                const newFileName = 'doc_' + Date.now() + '.jpg';
-                const croppedFile = new File([blob], newFileName, { type: 'image/jpeg' });
+            // Compress to JPEG Blob using a Promise to correctly handle errors
+            const blob = await new Promise((resolve, reject) => {
+                canvas.toBlob((b) => {
+                    if (b) resolve(b);
+                    else reject(new Error("Errore durante la compressione dell'immagine"));
+                }, 'image/jpeg', 0.8); // 80% quality compression
+            });
 
-                await handleUploadFinal(croppedFile);
+            // Crea un nuovo file dal blob
+            const newFileName = 'doc_' + Date.now() + '.jpg';
+            const croppedFile = new File([blob], newFileName, { type: 'image/jpeg' });
 
-            }, 'image/jpeg', 0.8); // 80% quality compression
+            await handleUploadFinal(croppedFile);
 
         } catch (err) {
             console.error(err);
@@ -244,9 +250,7 @@ function initCropperStep() {
     // Load local file to image src
     const reader = new FileReader();
     reader.onload = (e) => {
-        imageElement.src = e.target.result;
-
-        // Wait for image load then init cropper
+        // Assign onload before setting src to avoid missing the event if loaded synchronously
         imageElement.onload = () => {
             if (docCropper) docCropper.destroy();
             docCropper = new Cropper(imageElement, {
@@ -262,6 +266,7 @@ function initCropperStep() {
                 toggleDragModeOnDblclick: false,
             });
         };
+        imageElement.src = e.target.result;
     };
     reader.readAsDataURL(docCurrentFile);
 }
