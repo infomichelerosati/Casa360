@@ -48,9 +48,9 @@ async function initGridStack() {
 
     // Inizializza la Dock (Pannello moduli nascosti)
     window.dockGrid = GridStack.init({
-        cellHeight: 60,
-        margin: 5,
-        column: 4, // Dock ha sempre 4 colonne fisse
+        cellHeight: 90,
+        margin: 8,
+        column: 3, // Dock ha 3 colonne per formare quadrati larghi e comodi
         disableOneColumnMode: true,
         float: true,
         animate: true,
@@ -66,10 +66,44 @@ async function initGridStack() {
         window.dockGrid.on('added', function (e, items) {
             items.forEach(item => {
                 if (!item.el) return;
+
                 item.el.setAttribute('data-orig-w', item.w);
                 item.el.setAttribute('data-orig-h', item.h);
                 window.dockGrid.update(item.el, { w: 1, h: 1 });
                 item.el.classList.add('in-dock');
+
+                // Set data-attributes used by CSS to draw the clean icon
+                const dashCard = item.el.querySelector('.grid-stack-item-content');
+                let widgetType = item.el.getAttribute('gs-id');
+                let icon = 'fa-box';
+                let title = 'Widget';
+
+                if (widgetType === 'widget-meteo') {
+                    icon = 'fa-cloud-sun'; title = 'Meteo';
+                } else if (widgetType === 'widget-salute') {
+                    icon = 'fa-pills'; title = 'Terapie';
+                } else if (widgetType === 'widget-spesa') {
+                    icon = 'fa-cart-shopping'; title = 'Spesa';
+                } else if (widgetType === 'widget-calendario') {
+                    icon = 'fa-calendar-day'; title = 'Eventi';
+                } else if (widgetType === 'widget-lavoro') {
+                    icon = 'fa-briefcase'; title = 'Turni';
+                } else if (widgetType === 'widget-documenti') {
+                    icon = 'fa-folder-open'; title = 'Archivio';
+                } else if (widgetType === 'widget-animali') {
+                    icon = 'fa-paw'; title = 'Animali';
+                }
+
+                item.el.setAttribute('data-dock-icon', icon);
+                item.el.setAttribute('data-dock-title', title);
+
+                // Initialize Icon Overlay if not exists
+                if (!dashCard.querySelector('.dock-icon-overlay')) {
+                    const overlay = document.createElement('div');
+                    overlay.className = 'dock-icon-overlay fade-in';
+                    overlay.innerHTML = `<i class="fa-solid ${icon}"></i><span>${title}</span>`;
+                    dashCard.appendChild(overlay);
+                }
             });
         });
 
@@ -81,6 +115,11 @@ async function initGridStack() {
                     let oh = item.el.getAttribute('data-orig-h') || 2;
                     dashGrid.update(item.el, { w: parseInt(ow), h: parseInt(oh) });
                     item.el.classList.remove('in-dock');
+
+                    // Remove the Icon Overlay map that was injected in dock
+                    const dashCard = item.el.querySelector('.grid-stack-item-content');
+                    const overlay = dashCard.querySelector('.dock-icon-overlay');
+                    if (overlay) overlay.remove();
                 }
             });
             saveGridLayout(); // Auto-save on addition
@@ -219,9 +258,9 @@ async function loadGridLayout() {
                         // Manteniamo o riportiamo sulla griglia principale
                         if (el.parentElement.parentElement.id === 'dashboard-dock' && window.dockGrid) {
                             window.dockGrid.removeWidget(el, false);
-                            dashGrid.addWidget(el, { x: savedNode.x, y: savedNode.y, w: savedNode.w, h: savedNode.h });
+                            dashGrid.addWidget(el, { id: savedNode.id, x: savedNode.x, y: savedNode.y, w: savedNode.w, h: savedNode.h });
                         } else {
-                            dashGrid.update(el, { x: savedNode.x, y: savedNode.y, w: savedNode.w, h: savedNode.h });
+                            dashGrid.update(el, { id: savedNode.id, x: savedNode.x, y: savedNode.y, w: savedNode.w, h: savedNode.h });
                         }
                     }
                 }
