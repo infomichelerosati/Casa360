@@ -279,15 +279,16 @@ function initCropperStep() {
             try {
                 docCropper = new Cropper(imageElement, {
                     viewMode: 1,
-                    dragMode: 'move',
+                    dragMode: 'crop', // Lascia che l'utente disegni/ridimensioni il box invece di spostare la foto
                     autoCropArea: 0.9,
                     restore: false,
                     guides: true,
                     center: true,
-                    highlight: false,
+                    highlight: true,
                     cropBoxMovable: true,
                     cropBoxResizable: true,
-                    toggleDragModeOnDblclick: false
+                    toggleDragModeOnDblclick: false,
+                    zoomable: false // Evita conflitti di pinch-to-zoom su mobile
                 });
             } catch (err) {
                 console.error("Cropper initialization failed:", err);
