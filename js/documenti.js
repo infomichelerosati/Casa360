@@ -230,7 +230,7 @@ function setupDocModalEvents() {
             const blob = await new Promise((resolve, reject) => {
                 canvas.toBlob((b) => {
                     if (b) resolve(b);
-                    else reject(new Error("Errore durante la compressione dell'immagine"));
+                    else reject(new Error("Compressione fallita"));
                 }, 'image/jpeg', 0.8); // 80% quality compression
             });
 
@@ -241,8 +241,8 @@ function setupDocModalEvents() {
             await handleUploadFinal(croppedFile);
 
         } catch (err) {
-            console.error(err);
-            alert("Errore durante il ritaglio dell'immagine.");
+            console.error("Crop save error:", err);
+            alert(`Errore: ${err.message || 'Impossibile salvare il documento'}`);
             btn.disabled = false;
             spinner.classList.add('hidden');
         }
@@ -267,28 +267,56 @@ function initCropperStep() {
 
     const imageElement = document.getElementById('cropper-image');
 
+    // Clean up previous cropper
+    if (docCropper) {
+        docCropper.destroy();
+        docCropper = null;
+    }
+
     // Load local file to image src
     const reader = new FileReader();
     reader.onload = (e) => {
-        // Assign onload before setting src to avoid missing the event if loaded synchronously
+        // Wait for the step2 div to be visible in the DOM, otherwise Cropper calculates width: 0
         imageElement.onload = () => {
-            if (docCropper) docCropper.destroy();
-            docCropper = new Cropper(imageElement, {
-                viewMode: 1, // Restrict the crop box not to exceed the size of the canvas
-                dragMode: 'move', // Default to moving image
-                autoCropArea: 0.9,
-                restore: false,
-                guides: true,
-                center: true,
-                highlight: false,
-                cropBoxMovable: true,
-                cropBoxResizable: true,
-                toggleDragModeOnDblclick: false,
-            });
+            setTimeout(() => {
+                try {
+                    docCropper = new Cropper(imageElement, {
+                        viewMode: 1,
+                        dragMode: 'move',
+                        autoCropArea: 0.9,
+                        restore: false,
+                        guides: true,
+                        center: true,
+                        highlight: false,
+                        cropBoxMovable: true,
+                        cropBoxResizable: true,
+                        toggleDragModeOnDblclick: false,
+                        ready: function () {
+                            console.log("Cropper is ready and rendered");
+                        }
+                    });
+                } catch (err) {
+                    console.error("Cropper initialization failed:", err);
+                    alert("Errore caricamento strumento di ritaglio.");
+                }
+            }, 100); // Give enough time for the browser to paint the hidden->flex transition
         };
+        // Reset src before setting to force onload trigger
+        imageElement.src = '';
         imageElement.src = e.target.result;
     };
-    reader.readAsDataURL(docCurrentFile);
+
+    reader.onerror = () => {
+        alert("Errore di lettura del file immagine.");
+        document.getElementById('btn-back-step').click();
+    };
+
+    if (docCurrentFile) {
+        reader.readAsDataURL(docCurrentFile);
+    } else {
+        alert("Errore: Nessun file trovato. Riprovare.");
+        document.getElementById('btn-back-step').click();
+    }
 }
 
 async function handleUploadFinal(fileToUpload) {
