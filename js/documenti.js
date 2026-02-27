@@ -24,6 +24,19 @@ async function initDocumenti() {
     setupCategoryFilters();
 
     await loadDocuments();
+
+    // Auto-recovery: If the browser was killed while taking a photo, 
+    // modern browsers often restore the <input type="file"> value on reload.
+    setTimeout(() => {
+        const fileInput = document.getElementById('doc-file-input');
+        if (fileInput && fileInput.files && fileInput.files.length > 0) {
+            console.log("Restoring photo from previous session crash");
+            document.getElementById('btn-add-document').click(); // Open modal
+            // Trigger change event to load the file into UI
+            const event = new Event('change', { bubbles: true });
+            fileInput.dispatchEvent(event);
+        }
+    }, 300);
 }
 
 function setupCategoryFilters() {

@@ -69,9 +69,13 @@ async function renderApp(session) {
         // Inizializza Listeners Realtime per Notifiche
         initRealtimeSubscriptions();
 
-        // Mostra nav e carica la dashboard
+        // Mostra nav e carica l'ultimo modulo visitato o la dashboard
         if (nav) nav.classList.remove('hidden');
-        loadModule('dashboard');
+
+        let lastModule = localStorage.getItem('family_os_last_module') || 'dashboard';
+
+        // Ensure nav state reflects loaded module
+        window.navigateApp(lastModule);
 
         // Carica le notifiche globali all'avvio
         setTimeout(() => {
@@ -103,6 +107,9 @@ window.navigateApp = function (moduleName) {
         nav.classList.remove('text-darkblue-accent', 'clay-item', 'bg-darkblue-base', 'rounded-full');
         nav.classList.add('text-darkblue-icon');
     });
+
+    // Save current module to localStorage to recover state on reload
+    localStorage.setItem('family_os_last_module', moduleName);
 
     // Try finding the exact module in the navbar
     let targetNav = document.querySelector(`.nav-item[data-module="${moduleName}"]`);
