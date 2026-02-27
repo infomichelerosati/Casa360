@@ -167,21 +167,10 @@ function setupDocModalEvents() {
         resetFileInfoUI();
     });
 
-    // Prevent default form submission to avoid reloads
+    // Next Step / Submit Form goes to cropper or final upload
     const formMeta = document.getElementById('form-doc-meta');
     formMeta.addEventListener('submit', (e) => {
-        e.preventDefault();
-        document.getElementById('btn-next-step').click(); // Trigger the manual flow
-    });
-
-    // Next Step / Submit Form
-    document.getElementById('btn-next-step').addEventListener('click', () => {
-        // Validate form manually since we avoid default submit
-        const form = document.getElementById('form-doc-meta');
-        if (!form.checkValidity()) {
-            form.reportValidity();
-            return;
-        }
+        e.preventDefault(); // Prevent standard page reload
 
         if (docOriginalFileType === 'application/pdf') {
             // PDF skip cropper
