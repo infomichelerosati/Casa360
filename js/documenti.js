@@ -273,49 +273,51 @@ function initCropperStep() {
         docCropper = null;
     }
 
-    // Load local file to image src
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        // Wait for the step2 div to be visible in the DOM, otherwise Cropper calculates width: 0
-        imageElement.onload = () => {
-            setTimeout(() => {
-                try {
-                    docCropper = new Cropper(imageElement, {
-                        viewMode: 1,
-                        dragMode: 'move',
-                        autoCropArea: 0.9,
-                        restore: false,
-                        guides: true,
-                        center: true,
-                        highlight: false,
-                        cropBoxMovable: true,
-                        cropBoxResizable: true,
-                        toggleDragModeOnDblclick: false,
-                        ready: function () {
-                            console.log("Cropper is ready and rendered");
-                        }
-                    });
-                } catch (err) {
-                    console.error("Cropper initialization failed:", err);
-                    alert("Errore caricamento strumento di ritaglio.");
-                }
-            }, 100); // Give enough time for the browser to paint the hidden->flex transition
-        };
-        // Reset src before setting to force onload trigger
+    // Revoke old blob URL to free memory
+    if (imageElement.src && imageElement.src.startsWith('blob:')) {
+        URL.revokeObjectURL(imageElement.src);
+    }
+
+    if (!docCurrentFile || docCurrentFile.size === 0) {
+        alert("Errore: Il file immagine è vuoto o perso. Scatta di nuovo.");
+        document.getElementById('btn-back-step').click();
+        return;
+    }
+
+    imageElement.onload = () => {
+        // Wait for the step2 div to be visible in the DOM
+        setTimeout(() => {
+            try {
+                docCropper = new Cropper(imageElement, {
+                    viewMode: 1,
+                    dragMode: 'move',
+                    autoCropArea: 0.9,
+                    restore: false,
+                    guides: true,
+                    center: true,
+                    highlight: false,
+                    cropBoxMovable: true,
+                    cropBoxResizable: true,
+                    toggleDragModeOnDblclick: false
+                });
+            } catch (err) {
+                console.error("Cropper initialization failed:", err);
+                alert("Errore caricamento strumento di ritaglio.");
+            }
+        }, 150);
+    };
+
+    imageElement.onerror = () => {
+        alert("Errore nel rendering dell'immagine fotocamera.");
+        document.getElementById('btn-back-step').click();
+    };
+
+    try {
+        // Use object URL instead of FileReader base64 to prevent mobile RAM crashes with huge photos
         imageElement.src = '';
-        imageElement.src = e.target.result;
-    };
-
-    reader.onerror = () => {
-        alert("Errore di lettura del file immagine.");
-        document.getElementById('btn-back-step').click();
-    };
-
-    if (docCurrentFile) {
-        reader.readAsDataURL(docCurrentFile);
-    } else {
-        alert("Errore: Nessun file trovato. Riprovare.");
-        document.getElementById('btn-back-step').click();
+        imageElement.src = URL.createObjectURL(docCurrentFile);
+    } catch (err) {
+        alert("Errore durante l'accesso al file: " + err.message);
     }
 }
 
@@ -381,7 +383,8 @@ async function handleUploadFinal(fileToUpload) {
 
     } catch (err) {
         console.error("Upload Error:", err);
-        alert("Errore durante il caricamento del documento. Riprova.");
+        const errMsg = err.message || err.error_description || JSON.stringify(err);
+        alert(`Errore Db/Storage: ${errMsg}`);
     } finally {
         if (btn) btn.disabled = false;
         if (spinner) spinner.classList.add('hidden');
