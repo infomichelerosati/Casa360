@@ -9,17 +9,31 @@ function initApp() {
     // Setup Navigation Listeners
     setupNavigation();
 
+    let isAppInitialized = false;
+
     // Ascolta i cambiamenti di stato di autenticazione
     supabase.auth.onAuthStateChange((event, session) => {
         console.log("Auth event:", event);
-        if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
-            renderApp(session);
+        if (event === 'SIGNED_IN') {
+            if (!isAppInitialized) {
+                isAppInitialized = true;
+                renderApp(session);
+            }
+        } else if (event === 'SIGNED_OUT') {
+            isAppInitialized = false;
+            renderApp(null);
         }
     });
 
     // Controllo iniziale della sessione
     supabase.auth.getSession().then(({ data: { session } }) => {
-        renderApp(session);
+        if (session && !isAppInitialized) {
+            isAppInitialized = true;
+            renderApp(session);
+        } else if (!session && !isAppInitialized) {
+            isAppInitialized = true;
+            renderApp(null);
+        }
     });
 }
 
