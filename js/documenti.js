@@ -353,8 +353,21 @@ async function handleUploadFinal(fileToUpload) {
         // 2. Insert Metadata to family_documents table
         const title = document.getElementById('doc-title').value;
         const category = document.getElementById('doc-category').value;
-        const expiry = document.getElementById('doc-expiry').value || null;
+
+        // Pulizia data di scadenza (deve essere null se vuota)
+        let rawExpiry = document.getElementById('doc-expiry').value;
+        const expiry = (rawExpiry && rawExpiry.trim() !== '') ? rawExpiry : null;
+
         const desc = document.getElementById('doc-desc').value;
+
+        // Debug logging for RLS
+        console.log("Attempting to insert document with:", {
+            familyId, userId: user.id, filePath, expiry
+        });
+
+        if (!familyId || !user.id) {
+            throw new Error("Dati sessione utente mancanti (familyId o user.id nulli)");
+        }
 
         const { error: dbError } = await supabase
             .from('family_documents')
