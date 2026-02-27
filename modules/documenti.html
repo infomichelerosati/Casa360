@@ -196,9 +196,11 @@
                         <div class="w-8"></div>
                     </div>
 
-                    <div class="flex-1 w-full bg-black/10 rounded-2xl overflow-hidden block" id="cropper-container">
+                    <div class="flex-1 w-full bg-black/10 rounded-2xl overflow-hidden relative border border-white/10 min-h-[50vh] flex items-center justify-center"
+                        id="cropper-container">
                         <!-- Immagine sorgente per cropper.js -->
-                        <img id="cropper-image" src="" class="block max-w-full w-full" alt="Da ritagliare">
+                        <img id="cropper-image" src="" class="max-w-full max-h-[50vh] lg:max-h-full block"
+                            alt="Da ritagliare">
                     </div>
 
                     <div class="pb-safe pt-4 shrink-0 px-2 flex gap-4">
