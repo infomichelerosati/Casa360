@@ -154,6 +154,13 @@ function setupDocModalEvents() {
         resetFileInfoUI();
     });
 
+    // Prevent default form submission to avoid reloads
+    const formMeta = document.getElementById('form-doc-meta');
+    formMeta.addEventListener('submit', (e) => {
+        e.preventDefault();
+        document.getElementById('btn-next-step').click(); // Trigger the manual flow
+    });
+
     // Next Step / Submit Form
     document.getElementById('btn-next-step').addEventListener('click', () => {
         // Validate form manually since we avoid default submit
