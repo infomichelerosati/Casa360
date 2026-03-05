@@ -229,6 +229,13 @@ function initModuleLogic(moduleName) {
                 console.error("Funzione initAnimali non trovata. Controlla index.html");
             }
             break;
+        case 'bambini':
+            if (window.BambiniModule) {
+                window.BambiniModule.init();
+            } else {
+                console.error("Oggetto BambiniModule non trovato. Controlla index.html");
+            }
+            break;
         case 'lavoro':
             if (typeof initLavoro === 'function') {
                 initLavoro();

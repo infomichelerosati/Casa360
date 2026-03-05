@@ -1,0 +1,510 @@
+<!-- modules/bambini.html -->
+<header class="flex justify-between items-center w-full mb-6 mt-2">
+    <div>
+        <h1 class="text-3xl font-bold text-darkblue-heading pl-2 mb-1">🧸 Bambini</h1>
+        <p class="text-sm font-medium text-darkblue-accent pl-2">Salute, crescita e routine</p>
+    </div>
+    <button id="btn-add-kid"
+        class="clay-btn bg-darkblue-accent text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform">
+        <i class="fa-solid fa-plus text-xl"></i>
+    </button>
+</header>
+
+<div class="space-y-6" id="kids-container">
+    <!-- Contenuto dinamico inserito da JS (Elenco bambini) -->
+    <div class="flex justify-center items-center h-48">
+        <i class="fa-solid fa-circle-notch fa-spin text-darkblue-accent text-3xl"></i>
+    </div>
+</div>
+
+<!-- Kid Details Modal (Full Screen con TabLayout) -->
+<div id="modal-kid-details"
+    class="fixed inset-0 bg-darkblue-base z-50 transform translate-x-full transition-transform duration-300 flex flex-col hidden">
+
+    <!-- Top Bar (Header) -->
+    <div class="h-16 flex items-center justify-between px-4 clay-card bg-darkblue-card rounded-b-[2rem] z-10 shrink-0">
+        <button id="btn-close-kid-details"
+            class="w-10 h-10 flex items-center justify-center text-darkblue-icon active:scale-95 transition-transform">
+            <i class="fa-solid fa-chevron-left text-xl"></i>
+        </button>
+        <h2 class="text-xl font-bold text-darkblue-heading" id="kid-detail-name">Nome Bambino</h2>
+        <div class="w-10"></div> <!-- Placeholder Layout -->
+    </div>
+
+    <!-- Tabs Navigazione -->
+    <div class="flex overflow-x-auto gap-2 px-4 py-4 shrink-0 no-scrollbar">
+        <button class="kid-tab-btn active px-4 py-2 rounded-full text-sm font-bold clay-item transition-all"
+            data-tab="tab-anagrafica"><i class="fa-solid fa-address-card mr-2"></i>Info</button>
+        <button class="kid-tab-btn px-4 py-2 rounded-full text-sm font-bold clay-item transition-all text-darkblue-icon"
+            data-tab="tab-salute"><i class="fa-solid fa-stethoscope mr-2"></i>Salute</button>
+        <button class="kid-tab-btn px-4 py-2 rounded-full text-sm font-bold clay-item transition-all text-darkblue-icon"
+            data-tab="tab-sviluppo"><i class="fa-solid fa-child-reaching mr-2"></i>Sviluppo</button>
+        <button class="kid-tab-btn px-4 py-2 rounded-full text-sm font-bold clay-item transition-all text-darkblue-icon"
+            data-tab="tab-logistica"><i class="fa-solid fa-calendar-check mr-2"></i>Logistica</button>
+        <button class="kid-tab-btn px-4 py-2 rounded-full text-sm font-bold clay-item transition-all text-darkblue-icon"
+            data-tab="tab-export"><i class="fa-regular fa-file-pdf mr-2"></i>Export</button>
+    </div>
+
+    <!-- Body Scrollable (Contenitori delle singole schede) -->
+    <div class="flex-1 overflow-y-auto px-4 pb-24">
+
+        <!-- =======================
+             TAB: ANAGRAFICA & INFO
+        ======================== -->
+        <div id="tab-anagrafica" class="kid-tab-content space-y-5">
+            <div class="clay-card bg-darkblue-card rounded-clay p-5">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="w-16 h-16 rounded-full bg-darkblue-base flex items-center justify-center text-3xl clay-item shadow-inner"
+                        id="kid-detail-icon">👶</div>
+                    <div>
+                        <p class="text-sm font-bold text-darkblue-heading" id="kid-detail-fullname">-</p>
+                        <p class="text-xs text-darkblue-accent mt-1"><i class="fa-solid fa-cake-candles mr-1"></i> <span
+                                id="kid-detail-age">N/A</span></p>
+                        <p class="text-xs text-darkblue-icon mt-1" id="kid-detail-gender_blood">Sesso: - | Gruppo: -</p>
+                    </div>
+                </div>
+                <!-- Bollino Allergie (Visibile solo se ci sono allergie) -->
+                <div id="kid-detail-allergies-container"
+                    class="hidden mb-4 bg-red-100 border border-red-300 rounded-xl p-3">
+                    <p class="text-xs font-bold text-red-600 mb-1"><i
+                            class="fa-solid fa-triangle-exclamation mr-1"></i>Allergie / Intolleranze Note</p>
+                    <p class="text-sm text-red-800 font-semibold" id="kid-detail-allergies-list">-</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div class="bg-darkblue-base rounded-2xl p-3 clay-item shadow-inner">
+                        <p class="text-xs text-darkblue-icon mb-1">Pediatra</p>
+                        <p class="text-sm font-bold text-darkblue-heading truncate" id="kid-detail-pediatra">-</p>
+                    </div>
+                    <button id="btn-call-pediatra"
+                        class="bg-darkblue-accent/20 rounded-2xl p-3 clay-item shadow-inner flex flex-col items-center justify-center text-darkblue-accent active:scale-95 transition-transform">
+                        <i class="fa-solid fa-phone mb-1"></i>
+                        <span class="text-xs font-bold">Chiama</span>
+                    </button>
+                </div>
+
+                <div class="flex justify-between items-end border-b border-darkblue-base pb-1 mb-2">
+                    <h3 class="text-sm font-bold text-darkblue-icon"><i
+                            class="fa-solid fa-triangle-exclamation mr-1 text-red-400"></i>Contatti Emergenza</h3>
+                    <button id="btn-edit-emergencies"
+                        class="text-[10px] text-darkblue-accent font-bold uppercase tracking-wider"><i
+                            class="fa-solid fa-pen mr-1"></i>Modifica</button>
+                </div>
+                <div class="space-y-2" id="kid-detail-emergencies">
+                    <p class="text-xs text-darkblue-icon text-center italic py-2">Nessun contatto rapido inserito</p>
+                </div>
+
+                <div class="flex justify-between items-end border-b border-darkblue-base pb-1 mt-4 mb-2">
+                    <h3 class="text-sm font-bold text-darkblue-icon"><i
+                            class="fa-solid fa-ruler mr-1 text-amber-400"></i>Misure Base (Acquisti)</h3>
+                    <button id="btn-edit-sizes"
+                        class="text-[10px] text-darkblue-accent font-bold uppercase tracking-wider"><i
+                            class="fa-solid fa-pen mr-1"></i>Modifica</button>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <p class="text-xs text-darkblue-heading bg-darkblue-base p-2 rounded-xl text-center">Scarpe: <strong
+                            class="text-darkblue-accent" id="kid-detail-shoesize">-</strong></p>
+                    <p class="text-xs text-darkblue-heading bg-darkblue-base p-2 rounded-xl text-center">Taglia Abito:
+                        <strong class="text-darkblue-accent" id="kid-detail-clothsize">-</strong>
+                    </p>
+                </div>
+
+                <!-- Scadenzario Documenti -->
+                <div class="flex justify-between items-end border-b border-darkblue-base pb-1 mt-4 mb-2">
+                    <h3 class="text-sm font-bold text-darkblue-icon"><i
+                            class="fa-solid fa-id-card mr-1 text-blue-400"></i>Documenti</h3>
+                    <button id="btn-edit-docs"
+                        class="text-[10px] text-darkblue-accent font-bold uppercase tracking-wider"><i
+                            class="fa-solid fa-pen mr-1"></i>Modifica</button>
+                </div>
+                <div class="grid grid-cols-1 gap-2">
+                    <div
+                        class="bg-darkblue-base rounded-2xl p-3 flex justify-between items-center clay-item shadow-inner">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-regular fa-address-card text-darkblue-icon text-lg"></i>
+                            <div>
+                                <p class="text-xs text-darkblue-heading font-bold">Carta Identità</p>
+                                <p class="text-[10px] text-darkblue-icon">Scadenza</p>
+                            </div>
+                        </div>
+                        <span class="text-sm font-bold" id="kid-detail-idcard">-</span>
+                    </div>
+                    <div
+                        class="bg-darkblue-base rounded-2xl p-3 flex justify-between items-center clay-item shadow-inner">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-notes-medical text-darkblue-icon text-lg"></i>
+                            <div>
+                                <p class="text-xs text-darkblue-heading font-bold">Tessera Sanitaria</p>
+                                <p class="text-[10px] text-darkblue-icon">Scadenza</p>
+                            </div>
+                        </div>
+                        <span class="text-sm font-bold" id="kid-detail-healthcard">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Danger Zone -->
+            <div class="pt-4 pb-8 flex justify-center">
+                <button id="btn-delete-kid"
+                    class="text-red-500 font-bold text-sm bg-red-500/10 px-6 py-3 rounded-full active:scale-95 transition-transform">
+                    <i class="fa-solid fa-trash-can mr-2"></i>Elimina Profilo
+                </button>
+            </div>
+        </div>
+
+        <!-- =======================
+             TAB: SALUTE & STORICO MEDICO
+        ======================== -->
+        <div id="tab-salute" class="kid-tab-content space-y-5 hidden">
+            <!-- Crescita (Peso, Altezza) -->
+            <div class="clay-card bg-darkblue-card rounded-[2rem] p-4 relative overflow-hidden">
+                <div class="flex justify-between items-center mb-2 z-10 relative">
+                    <h3 class="text-sm font-bold text-darkblue-heading"><i
+                            class="fa-solid fa-chart-line mr-2 text-blue-400"></i>Storico Crescita</h3>
+                    <button
+                        class="btn-add-growth text-xs bg-darkblue-base px-3 py-1 rounded-full text-darkblue-accent"><i
+                            class="fa-solid fa-plus"></i></button>
+                </div>
+                <!-- Diventato scrollable container -->
+                <div id="kid-latest-growth" class="mt-3 max-h-48 overflow-y-auto pr-1 custom-scrollbar space-y-2">
+                    <p class="text-xs text-darkblue-icon text-center italic py-2">Nessun dato registrato</p>
+                </div>
+            </div>
+
+            <!-- Eventi Acuti (Febbre, Traumi) -->
+            <div class="clay-card bg-darkblue-card rounded-[2rem] p-4 relative overflow-hidden">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-sm font-bold text-darkblue-heading"><i
+                            class="fa-solid fa-thermometer-half mr-2 text-red-400"></i>Diario Acuti (Febbre/Traumi)</h3>
+                    <button
+                        class="btn-add-event text-xs bg-darkblue-base px-3 py-1 rounded-full text-darkblue-accent"><i
+                            class="fa-solid fa-plus"></i></button>
+                </div>
+                <div id="kid-events-list" class="space-y-2 mt-3 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+                    <p class="text-xs text-darkblue-icon text-center italic">Nessun evento acuto recente.</p>
+                </div>
+            </div>
+
+            <!-- Storico Medico Completo (Vaccini, Visite, Allergie) -->
+            <div class="clay-card bg-darkblue-card rounded-clay p-5">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-darkblue-heading"><i
+                            class="fa-solid fa-notes-medical mr-2 text-green-400"></i>Storico Medico</h3>
+                    <button id="btn-add-medical-record"
+                        class="text-darkblue-accent text-sm font-bold active:scale-95 transition-transform"><i
+                            class="fa-solid fa-plus mr-1"></i>Nuovo</button>
+                </div>
+                <div id="kid-medical-list" class="space-y-3 relative border-l-2 border-darkblue-base ml-2 pl-4">
+                    <!-- Timeline Items via JS -->
+                    <p class="text-xs text-darkblue-icon text-center italic py-4">Nessun record medico.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- =======================
+             TAB: SVILUPPO & MILESTONES
+        ======================== -->
+        <div id="tab-sviluppo" class="kid-tab-content space-y-5 hidden">
+            <div class="clay-card bg-darkblue-card rounded-clay p-5">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-darkblue-heading"><i
+                            class="fa-solid fa-star mr-2 text-yellow-400"></i>Tappe & Prime Volte</h3>
+                    <button
+                        class="btn-add-milestone text-darkblue-accent text-sm font-bold active:scale-95 transition-transform"><i
+                            class="fa-solid fa-plus mr-1"></i>Registra</button>
+                </div>
+                <div id="kid-milestones-list" class="space-y-3">
+                    <p class="text-xs text-darkblue-icon text-center italic py-4">Nessun traguardo registrato.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- =======================
+             TAB: LOGISTICA & MENU
+        ======================== -->
+        <div id="tab-logistica" class="kid-tab-content space-y-5 hidden">
+            <div class="clay-card bg-darkblue-card rounded-clay p-5">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-darkblue-heading"><i
+                            class="fa-solid fa-bowl-food mr-2 text-orange-400"></i>Routine & Menu</h3>
+                    <button
+                        class="btn-add-routine text-darkblue-accent text-sm font-bold active:scale-95 transition-transform"><i
+                            class="fa-solid fa-plus mr-1"></i>Nuova</button>
+                </div>
+                <div id="kid-routine-list" class="grid grid-cols-1 gap-3">
+                    <!-- Esempio: Menu Settimana / Nuovi Assaggi -->
+                    <p class="text-xs text-darkblue-icon text-center italic py-4">Nessuna routine inserita.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- =======================
+             TAB: ESPORTAZIONI PDF
+        ======================== -->
+        <div id="tab-export" class="kid-tab-content space-y-5 hidden">
+            <div class="clay-card bg-darkblue-card rounded-[2rem] p-5 text-center">
+                <i class="fa-solid fa-file-medical text-4xl text-green-400 mb-2"></i>
+                <h3 class="text-lg font-bold text-darkblue-heading">Report Pediatra</h3>
+                <p class="text-xs text-darkblue-icon mb-4 mt-1">Esporta solo dati di Salute, Crescita, Eventi Acuti e
+                    Vaccinazioni.</p>
+                <button
+                    class="btn-export-pdf clay-btn bg-darkblue-accent text-white w-full py-3 rounded-full font-bold active:scale-95 transition-transform"
+                    data-format="medical">
+                    <i class="fa-solid fa-download mr-2"></i> Scarica PDF Medico
+                </button>
+            </div>
+
+            <div class="clay-card bg-darkblue-card rounded-[2rem] p-5 text-center">
+                <i class="fa-solid fa-book-open text-4xl text-amber-400 mb-2"></i>
+                <h3 class="text-lg font-bold text-darkblue-heading">Diario dei Ricordi</h3>
+                <p class="text-xs text-darkblue-icon mb-4 mt-1">Esporta le Prime Volte, Tappe Sviluppo e le "Perle"
+                    linguistiche (Frasi Buffe).</p>
+                <button
+                    class="btn-export-pdf clay-btn bg-darkblue-base border border-amber-400/50 text-amber-400 w-full py-3 rounded-full font-bold active:scale-95 transition-transform"
+                    data-format="memories">
+                    <i class="fa-solid fa-download mr-2"></i> Stampa Diario
+                </button>
+            </div>
+
+            <div class="clay-card bg-darkblue-card rounded-[2rem] p-5 text-center">
+                <i class="fa-solid fa-folder-open text-4xl text-blue-400 mb-2"></i>
+                <h3 class="text-lg font-bold text-darkblue-heading">Fascicolo Completo</h3>
+                <p class="text-xs text-darkblue-icon mb-4 mt-1">Unificatore totale. Stampa lo storico clinico, il diario
+                    dei ricordi e tutta la logistica e le routine associate.</p>
+                <button
+                    class="btn-export-pdf clay-btn bg-blue-500 text-white w-full py-3 rounded-full font-bold active:scale-95 transition-transform"
+                    data-format="full">
+                    <i class="fa-solid fa-download mr-2"></i> Scarica Tutto
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ==========================================
+     MODALS DI INSERIMENTO (Form Vari)
+=========================================== -->
+
+<!-- 1. Form Nuovo Profilo Bambino -->
+<div id="modal-kid-form"
+    class="fixed inset-0 bg-darkblue-base/90 z-[60] flex items-center justify-center transition-opacity duration-300 opacity-0 pointer-events-none px-4">
+    <div
+        class="clay-card bg-darkblue-card w-full max-w-sm rounded-[2.5rem] p-6 transform scale-95 transition-transform duration-300 max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-darkblue-heading" id="kid-form-title">Nuovo Bambino</h3>
+            <button id="btn-close-kid-form"
+                class="w-8 h-8 flex items-center justify-center text-darkblue-icon bg-darkblue-base rounded-full clay-item active:scale-95 transition-transform"><i
+                    class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <form id="form-kid" class="space-y-4">
+            <input type="hidden" id="kid-id">
+
+            <div class="grid grid-cols-2 gap-3">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-darkblue-icon uppercase tracking-wider pl-4">Nome *</label>
+                    <input type="text" id="kid-firstname" required
+                        class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 outline-none focus:ring-2 focus:ring-darkblue-accent shadow-inner">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-darkblue-icon uppercase tracking-wider pl-4">Cognome *</label>
+                    <input type="text" id="kid-lastname" required
+                        class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 outline-none focus:ring-2 focus:ring-darkblue-accent shadow-inner">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-darkblue-icon uppercase pl-4">Data Nascita*</label>
+                    <input type="date" id="kid-birthdate" required
+                        class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 shadow-inner"
+                        style="color-scheme: dark;">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-darkblue-icon uppercase lg pl-4">Sesso</label>
+                    <select id="kid-gender"
+                        class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 shadow-inner">
+                        <option value="Maschio">Maschio</option>
+                        <option value="Femmina">Femmina</option>
+                        <option value="Altro">Altro</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-darkblue-icon uppercase pl-4">Gruppo Sanguigno</label>
+                <select id="kid-blood"
+                    class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 shadow-inner">
+                    <option value="">Non specificato</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                    <option value="0+">0+</option>
+                    <option value="0-">0-</option>
+                </select>
+            </div>
+
+            <h4 class="text-sm font-bold text-darkblue-icon pt-2 border-t border-darkblue-base">Area Medica</h4>
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-darkblue-icon uppercase pl-4">Nome Pediatra</label>
+                <input type="text" id="kid-pediatra-name"
+                    class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 shadow-inner">
+            </div>
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-darkblue-icon uppercase pl-4">Tel. Pediatra</label>
+                <input type="tel" id="kid-pediatra-phone"
+                    class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 shadow-inner">
+            </div>
+
+            <button type="submit"
+                class="clay-btn bg-darkblue-accent text-white w-full h-14 rounded-full font-bold text-lg flex items-center justify-center mt-6">
+                Salva Profilo
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Generica per Record Dinamici (Salute, Diario, Routine) -->
+<div id="modal-kid-generic-form"
+    class="fixed inset-0 bg-darkblue-base/90 z-[70] flex items-center justify-center transition-opacity duration-300 opacity-0 pointer-events-none px-4">
+    <div
+        class="clay-card bg-darkblue-card w-full max-w-sm rounded-[2.5rem] p-6 transform scale-95 transition-transform duration-300">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-darkblue-heading" id="generic-form-title">Aggiungi</h3>
+            <button id="btn-close-generic"
+                class="w-8 h-8 flex items-center justify-center text-darkblue-icon bg-darkblue-base rounded-full clay-item active:scale-95"><i
+                    class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <form id="form-kid-generic" class="space-y-4">
+            <input type="hidden" id="generic-table-target"> <!-- Indica se salva in growth, medical, milestone ecc. -->
+
+            <!-- Injection Dynamico Form Fields da JS a seconda del button premuto -->
+            <div id="generic-form-fields-container" class="space-y-4">
+                <!-- Fields iniettati -->
+            </div>
+
+            <button type="submit"
+                class="clay-btn bg-darkblue-accent text-white w-full h-14 rounded-full font-bold mt-2">
+                Salva Record
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Emergenze (Custom Prompt) -->
+<div id="modal-edit-emergencies"
+    class="fixed inset-0 bg-darkblue-base/90 z-[80] flex items-center justify-center transition-opacity duration-300 opacity-0 pointer-events-none px-4">
+    <div
+        class="clay-card bg-darkblue-card w-full max-w-sm rounded-[2.5rem] p-6 transform scale-95 transition-transform duration-300">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-darkblue-heading">Contatti Rapidi</h3>
+            <button id="btn-close-edit-emergencies"
+                class="w-8 h-8 flex items-center justify-center text-darkblue-icon bg-darkblue-base rounded-full clay-item active:scale-95"><i
+                    class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form id="form-edit-emergencies" class="space-y-4">
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-darkblue-icon uppercase pl-4">Nome Contatto 1</label>
+                <input type="text" id="em-name-1" placeholder="Es. Nonna Maria"
+                    class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 shadow-inner">
+            </div>
+            <div class="space-y-1 pb-3 border-b border-darkblue-base">
+                <label class="text-xs font-bold text-darkblue-icon uppercase pl-4">Telefono Contatto 1</label>
+                <input type="tel" id="em-phone-1"
+                    class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 shadow-inner">
+            </div>
+
+            <div class="space-y-1 mt-3">
+                <label class="text-xs font-bold text-darkblue-icon uppercase pl-4">Nome Contatto 2</label>
+                <input type="text" id="em-name-2" placeholder="Es. Zio Marco"
+                    class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 shadow-inner">
+            </div>
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-darkblue-icon uppercase pl-4">Telefono Contatto 2</label>
+                <input type="tel" id="em-phone-2"
+                    class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 shadow-inner">
+            </div>
+
+            <button type="submit"
+                class="clay-btn bg-darkblue-accent text-white w-full h-14 rounded-full font-bold mt-4">
+                Salva Contatti
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Misure (Custom Prompt) -->
+<div id="modal-edit-sizes"
+    class="fixed inset-0 bg-darkblue-base/90 z-[80] flex items-center justify-center transition-opacity duration-300 opacity-0 pointer-events-none px-4">
+    <div
+        class="clay-card bg-darkblue-card w-full max-w-sm rounded-[2.5rem] p-6 transform scale-95 transition-transform duration-300">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-darkblue-heading">Misure Base</h3>
+            <button id="btn-close-edit-sizes"
+                class="w-8 h-8 flex items-center justify-center text-darkblue-icon bg-darkblue-base rounded-full clay-item active:scale-95"><i
+                    class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form id="form-edit-sizes" class="space-y-4">
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-darkblue-icon uppercase pl-4">Taglia Scarpe</label>
+                <input type="text" id="size-shoe" placeholder="Es. 24" autocomplete="off"
+                    class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 shadow-inner">
+            </div>
+            <div class="space-y-1 mt-3">
+                <label class="text-xs font-bold text-darkblue-icon uppercase pl-4">Taglia Abbigliamento</label>
+                <input type="text" id="size-cloth" placeholder="Es. 18-24m, 92cm" autocomplete="off"
+                    class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 shadow-inner">
+            </div>
+            <button type="submit"
+                class="clay-btn bg-darkblue-accent text-white w-full h-14 rounded-full font-bold mt-4">
+                Salva Taglie
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Documenti (Custom Prompt) -->
+<div id="modal-edit-docs"
+    class="fixed inset-0 bg-darkblue-base/90 z-[80] flex items-center justify-center transition-opacity duration-300 opacity-0 pointer-events-none px-4">
+    <div
+        class="clay-card bg-darkblue-card w-full max-w-sm rounded-[2.5rem] p-6 transform scale-95 transition-transform duration-300">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-darkblue-heading">Scadenza Documenti</h3>
+            <button id="btn-close-edit-docs"
+                class="w-8 h-8 flex items-center justify-center text-darkblue-icon bg-darkblue-base rounded-full clay-item active:scale-95"><i
+                    class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form id="form-edit-docs" class="space-y-4">
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-darkblue-icon uppercase pl-4">Scad. Carta Identità</label>
+                <input type="date" id="doc-idcard" style="color-scheme: dark;"
+                    class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 shadow-inner">
+            </div>
+            <div class="space-y-1 mt-3">
+                <label class="text-xs font-bold text-darkblue-icon uppercase pl-4">Scad. Tessera Sanitaria</label>
+                <input type="date" id="doc-healthcard" style="color-scheme: dark;"
+                    class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 shadow-inner">
+            </div>
+            <button type="submit"
+                class="clay-btn bg-darkblue-accent text-white w-full h-14 rounded-full font-bold mt-4">
+                Aggiorna Date
+            </button>
+        </form>
+    </div>
+</div>
+
+<style>
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+</style>

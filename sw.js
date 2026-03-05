@@ -66,6 +66,10 @@ self.addEventListener('fetch', event => {
             .then(response => {
                 // Se la richiesta va a buon fine (200), aggiorniamo dinamicamente la cache!
                 if (response && response.status === 200 && response.type === 'basic') {
+                    // Evita di mettere in cache richieste HEAD o non http/https
+                    if (event.request.method !== 'GET' || !event.request.url.startsWith('http')) {
+                        return response;
+                    }
                     const responseToCache = response.clone();
                     caches.open(CACHE_NAME).then(cache => {
                         cache.put(event.request, responseToCache);
