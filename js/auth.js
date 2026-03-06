@@ -79,7 +79,7 @@ function initAuth() {
             console.log("Login success!", data);
             // Il listener auth onAuthStateChange in app.js gestirà il redirect
             if (typeof renderApp === 'function') {
-                renderApp(); // Ricarica layout principale se necessario
+                renderApp(data.session); // Ricarica layout principale se necessario
             }
 
         } catch (error) {
@@ -177,7 +177,7 @@ function initAuth() {
             console.log("Registration success!", authData);
             showConfirmModal("Successo", "Registrazione completata! Ora sei connesso.", () => {
                 if (typeof renderApp === 'function') {
-                    renderApp();
+                    renderApp(authData.session);
                 }
             });
 

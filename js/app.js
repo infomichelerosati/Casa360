@@ -10,17 +10,21 @@ function initApp() {
     setupNavigation();
 
     let isAppInitialized = false;
+    let currentSessionId = null;
 
     // Ascolta i cambiamenti di stato di autenticazione
     supabase.auth.onAuthStateChange((event, session) => {
         console.log("Auth event:", event);
         if (event === 'SIGNED_IN') {
-            if (!isAppInitialized) {
+            // Force re-render if it's a new login or we weren't initialized
+            if (!isAppInitialized || currentSessionId !== session?.user?.id) {
                 isAppInitialized = true;
+                currentSessionId = session?.user?.id;
                 renderApp(session);
             }
         } else if (event === 'SIGNED_OUT') {
             isAppInitialized = false;
+            currentSessionId = null;
             renderApp(null);
         }
     });
@@ -29,9 +33,11 @@ function initApp() {
     supabase.auth.getSession().then(({ data: { session } }) => {
         if (session && !isAppInitialized) {
             isAppInitialized = true;
+            currentSessionId = session?.user?.id;
             renderApp(session);
         } else if (!session && !isAppInitialized) {
             isAppInitialized = true;
+            currentSessionId = null;
             renderApp(null);
         }
     });
