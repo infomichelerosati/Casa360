@@ -17,6 +17,8 @@ async function initDashboard() {
     fetchDailyMeds();
     fetchTodayShifts();
     fetchAppInstalls();
+    fetchDashPets();
+    fetchDashDocs();
 
     // Al primo caricamento, prova a scaricare il meteo basandosi sull'ultima posizione (se salvata in localStorage) o fallback Roma.
     // Il permesso geolocalizzazione verrà chiesto la prima volta che si esegue la funzione meteo vera e propria.
@@ -48,11 +50,11 @@ async function initGridStack() {
 
     // Inizializza la Dock (Pannello moduli nascosti)
     window.dockGrid = GridStack.init({
-        cellHeight: 90,
-        margin: 8,
-        column: 3, // Dock ha 3 colonne per formare quadrati larghi e comodi
-        disableOneColumnMode: true,
-        float: true,
+        cellHeight: 60, // Numerico, mantiene i blocchi quadrati in accoppiata con larghezza 4/12
+        margin: 5,
+        column: 12, // Identico alla griglia principale, risolve conflitti drag&drop e bug di proporzione (4 colonne = 1/3)
+        disableOneColumnMode: true, // Impedisce a GridStack di forzare 1 colonna su schermi piccoli o contenitori stretti
+        float: false, // Turn off float so they snap to top-left automatically
         animate: true,
         staticGrid: true,
         acceptWidgets: function (el) { return true; } // Accetta tutto
@@ -69,7 +71,6 @@ async function initGridStack() {
 
                 item.el.setAttribute('data-orig-w', item.w);
                 item.el.setAttribute('data-orig-h', item.h);
-                window.dockGrid.update(item.el, { w: 1, h: 1 });
                 item.el.classList.add('in-dock');
 
                 // Set data-attributes used by CSS to draw the clean icon
@@ -96,14 +97,35 @@ async function initGridStack() {
 
                 item.el.setAttribute('data-dock-icon', icon);
                 item.el.setAttribute('data-dock-title', title);
+                item.el.classList.add('in-dock');
 
-                // Initialize Icon Overlay if not exists
-                if (!dashCard.querySelector('.dock-icon-overlay')) {
-                    const overlay = document.createElement('div');
-                    overlay.className = 'dock-icon-overlay fade-in';
-                    overlay.innerHTML = `<i class="fa-solid ${icon}"></i><span>${title}</span>`;
-                    dashCard.appendChild(overlay);
-                }
+                // Run updates slightly asynchronously to allow GridStack drop sequence to finish
+                setTimeout(() => {
+                    item.el.setAttribute('gs-w', '4');
+                    item.el.setAttribute('gs-h', '2');
+                    item.el.style.width = '';
+                    item.el.style.height = '';
+                    item.el.style.minWidth = '';
+                    item.el.style.minHeight = '';
+                    window.dockGrid.update(item.el, { w: 4, h: 2 });
+                    window.dockGrid.compact(); // Raccoglie in alto risolvendo i buchi verticali
+                    
+                    if (dashCard) {
+                        // Hide original content explicitly to beat inline styles
+                        Array.from(dashCard.children).forEach(child => {
+                            if (!child.classList.contains('dock-icon-overlay')) {
+                                child.style.display = 'none';
+                            }
+                        });
+
+                        if (!dashCard.querySelector('.dock-icon-overlay')) {
+                            const overlay = document.createElement('div');
+                            overlay.className = 'dock-icon-overlay fade-in flex flex-col items-center justify-center h-full w-full gap-2 text-slate-400 bg-slate-800/40 rounded-2xl shadow-inner cursor-grab';
+                            overlay.innerHTML = `<i class="fa-solid ${icon} text-[1.8rem] text-blue-400"></i><span class="text-[0.7rem] font-bold uppercase tracking-wide text-center leading-tight">${title}</span>`;
+                            dashCard.appendChild(overlay);
+                        }
+                    }
+                }, 50);
             });
         });
 
@@ -113,13 +135,25 @@ async function initGridStack() {
                 if (item.el.classList.contains('in-dock')) {
                     let ow = item.el.getAttribute('data-orig-w') || 2;
                     let oh = item.el.getAttribute('data-orig-h') || 2;
+                    item.el.style.width = '';
+                    item.el.style.height = '';
+                    item.el.style.minWidth = '';
+                    item.el.style.minHeight = '';
                     dashGrid.update(item.el, { w: parseInt(ow), h: parseInt(oh) });
                     item.el.classList.remove('in-dock');
 
-                    // Remove the Icon Overlay map that was injected in dock
+                    // Show original content again
                     const dashCard = item.el.querySelector('.grid-stack-item-content');
-                    const overlay = dashCard.querySelector('.dock-icon-overlay');
-                    if (overlay) overlay.remove();
+                    if (dashCard) {
+                        Array.from(dashCard.children).forEach(child => {
+                            if (!child.classList.contains('dock-icon-overlay')) {
+                                child.style.display = '';
+                            }
+                        });
+                        
+                        const overlay = dashCard.querySelector('.dock-icon-overlay');
+                        if (overlay) overlay.remove();
+                    }
                 }
             });
             saveGridLayout(); // Auto-save on addition
@@ -237,6 +271,18 @@ async function loadGridLayout() {
         }
 
         if (data && data.dashboard_layout && Array.isArray(data.dashboard_layout) && data.dashboard_layout.length > 0) {
+            
+            // TRUCCO GRIDSTACK: Il contenitore non può essere "display: none" quando GridStack deve
+            // calcolare le griglie e posizionare gli elementi (altrimenti fallisce e ripristina 12 colonne a caso)
+            const dockWrapper = document.getElementById('dashboard-dock-wrapper');
+            let wasDockHidden = false;
+            if (dockWrapper && dockWrapper.classList.contains('hidden')) {
+                wasDockHidden = true;
+                dockWrapper.classList.remove('hidden');
+                // Forza ricalcolo del reflow per permettere le misure
+                dockWrapper.offsetHeight; 
+            }
+
             dashGrid.batchUpdate();
             if (window.dockGrid) window.dockGrid.batchUpdate();
 
@@ -248,14 +294,77 @@ async function loadGridLayout() {
                 if (el) {
                     if (savedNode.hidden) {
                         // Spostiamo nel dock se necessario
+                        el.style.width = '';
+                        el.style.height = '';
+                        el.style.minWidth = '';
+                        el.style.minHeight = '';
+                        
                         if (el.parentElement.parentElement.id !== 'dashboard-dock' && window.dockGrid) {
-                            dashGrid.removeWidget(el, false); // false = non eliminare dal DOM
-                            window.dockGrid.addWidget(el, { w: savedNode.w, h: savedNode.h });
+                            dashGrid.removeWidget(el, false);
+                            // We set the native DOM attributes first so gridstack reads them as 4x2
+                            el.setAttribute('gs-w', '4');
+                            el.setAttribute('gs-h', '2');
+                            window.dockGrid.addWidget(el, { w: 4, h: 2, autoPosition: true });
                         } else if (window.dockGrid) {
-                            window.dockGrid.update(el, { w: savedNode.w, h: savedNode.h });
+                            el.setAttribute('gs-w', '4');
+                            el.setAttribute('gs-h', '2');
+                            window.dockGrid.update(el, { w: 4, h: 2 });
+                        }
+                        
+                        // Assicurati che abbia la classe corretta e l'icona
+                        el.classList.add('in-dock');
+                        
+                        const dashCard = el.querySelector('.grid-stack-item-content');
+                        let widgetType = el.getAttribute('gs-id');
+                        let icon = 'fa-box';
+                        let title = 'Widget';
+
+                        if (widgetType === 'widget-meteo') { icon = 'fa-cloud-sun'; title = 'Meteo'; }
+                        else if (widgetType === 'widget-salute') { icon = 'fa-pills'; title = 'Terapie'; }
+                        else if (widgetType === 'widget-spesa') { icon = 'fa-cart-shopping'; title = 'Spesa'; }
+                        else if (widgetType === 'widget-calendario') { icon = 'fa-calendar-day'; title = 'Eventi'; }
+                        else if (widgetType === 'widget-lavoro') { icon = 'fa-briefcase'; title = 'Turni'; }
+                        else if (widgetType === 'widget-documenti') { icon = 'fa-folder-open'; title = 'Archivio'; }
+                        else if (widgetType === 'widget-animali') { icon = 'fa-paw'; title = 'Animali'; }
+
+                        el.setAttribute('data-dock-icon', icon);
+                        el.setAttribute('data-dock-title', title);
+
+                        // Fallback logic for the old saved state where data-orig-w might not exist yet
+                        if (!el.getAttribute('data-orig-w')) el.setAttribute('data-orig-w', savedNode.w);
+                        if (!el.getAttribute('data-orig-h')) el.setAttribute('data-orig-h', savedNode.h);
+
+                        if (!dashCard.querySelector('.dock-icon-overlay')) {
+                            // Hide original content explicitly
+                            Array.from(dashCard.children).forEach(child => {
+                                if (!child.classList.contains('dock-icon-overlay')) {
+                                    child.style.display = 'none';
+                                }
+                            });
+
+                            const overlay = document.createElement('div');
+                            overlay.className = 'dock-icon-overlay fade-in flex flex-col items-center justify-center h-full w-full gap-2 text-slate-400 bg-slate-800/40 rounded-2xl shadow-inner cursor-grab';
+                            overlay.innerHTML = `<i class="fa-solid ${icon} text-[1.8rem] text-blue-400"></i><span class="text-[0.7rem] font-bold uppercase tracking-wide text-center leading-tight">${title}</span>`;
+                            dashCard.appendChild(overlay);
                         }
                     } else {
-                        // Manteniamo o riportiamo sulla griglia principale
+                        // Configurazione per reinserimento nella griglia principale
+                        el.style.width = '';
+                        el.style.height = '';
+                        el.style.minWidth = '';
+                        el.style.minHeight = '';
+                        
+                        const dashCard = el.querySelector('.grid-stack-item-content');
+                        if (dashCard) {
+                            Array.from(dashCard.children).forEach(child => {
+                                if (!child.classList.contains('dock-icon-overlay')) {
+                                    child.style.display = '';
+                                }
+                            });
+                        }
+                        
+                        el.setAttribute('gs-w', savedNode.w);
+                        el.setAttribute('gs-h', savedNode.h);
                         if (el.parentElement.parentElement.id === 'dashboard-dock' && window.dockGrid) {
                             window.dockGrid.removeWidget(el, false);
                             dashGrid.addWidget(el, { id: savedNode.id, x: savedNode.x, y: savedNode.y, w: savedNode.w, h: savedNode.h });
@@ -267,18 +376,46 @@ async function loadGridLayout() {
             });
 
             dashGrid.commit();
-            if (window.dockGrid) window.dockGrid.commit();
+            if (window.dockGrid) {
+                window.dockGrid.commit();
+                
+                // Forza un aggiornamento visivo di tutti gli elementi nel dock
+                const dockItems = window.dockGrid.getGridItems();
+                dockItems.forEach(el => {
+                    // Puliamo eventuali forzature INLINE PRIMA dell'update
+                    el.style.width = '';
+                    el.style.height = '';
+                    // Forziamo proporzione 4/12 di larghezza e 2 righe in altezza
+                    window.dockGrid.update(el, { w: 4, h: 2 });
+                });
+                
+                // Pack items to the top physically stopping gridstack from stacking them 1 per row
+                window.dockGrid.compact();
+            }
+            
+            // RIPRISTINA STATO NASCOSTO DOPO AVER CALCOLATO TUTTO
+            if (dockWrapper && wasDockHidden) {
+                dockWrapper.classList.add('hidden');
+            }
+
             console.log("Layout custom sincronizzato:", data.dashboard_layout);
         }
 
     } catch (e) {
         console.warn("Impossibile caricare layout", e);
     } finally {
-        // Applica l'opacità al container per svelarlo fluidamente (Previene il FOUC - flash di contenuto non stilizzato)
-        // Usiamo setTimeout per consentire al DOM di renderizzare la griglia fittizia prima del fade in
+        // Applica l'opacità al container per svelarlo fluidamente (Previene il FOUC)
         setTimeout(() => {
             const gridEl = document.getElementById('dashboard-grid');
             if (gridEl) gridEl.classList.remove('opacity-0');
+            
+            // Per il dock: assicurati che gli elementi abbiano lo stile giusto
+            if (window.dockGrid) {
+                const dockItems = window.dockGrid.getGridItems();
+                dockItems.forEach(el => {
+                     if (!el.classList.contains('in-dock')) el.classList.add('in-dock');
+                });
+            }
         }, 150);
     }
 }
@@ -931,5 +1068,185 @@ window.fetchTodayShifts = async function () {
 
     } catch (err) {
         console.error("Errore fetch turni oggi:", err);
+    }
+}
+
+// ==========================================
+// SCORCIATOIE WIDGET ANIMALI E SCORTE
+// ==========================================
+window.fetchDashPets = async function () {
+    try {
+        const currentUser = await window.getLoggedUser();
+        const familyId = await window.getUserFamilyId();
+        if (!currentUser || !familyId) return;
+
+        const { data: pets, error } = await window.supabase
+            .from('family_pets')
+            .select('*')
+            .eq('family_id', familyId)
+            .order('name', { ascending: true });
+
+        if (error) throw error;
+
+        const list = document.getElementById('dash-pets-list');
+        if (!list) return;
+
+        if (!pets || pets.length === 0) {
+            list.innerHTML = '<p class="text-[10px] py-2 w-full text-center text-darkblue-icon italic mt-1 bg-darkblue-base rounded-2xl">Nessun animale registrato.</p>';
+            return;
+        }
+
+        let html = '';
+        pets.forEach(pet => {
+            let iconText = '🐾';
+            if (pet.species === 'Cane') iconText = '🐶';
+            if (pet.species === 'Gatto') iconText = '🐱';
+            if (pet.species === 'Uccello') iconText = '🐦';
+            if (pet.species === 'Roditore') iconText = '🐹';
+            if (pet.species === 'Rettile') iconText = '🦎';
+            if (pet.species === 'Pesce') iconText = '🐠';
+
+            html += `
+                <div class="flex flex-col items-center justify-center shrink-0 w-16 h-16 bg-darkblue-base/50 rounded-2xl p-2 clay-item cursor-pointer active:scale-95 transition-transform" onclick="if(!window.isGridEditing) window.navigateApp('animali');">
+                    <span class="text-2xl drop-shadow-sm mb-1">${iconText}</span>
+                    <span class="text-[9px] font-bold text-darkblue-heading truncate w-full text-center">${pet.name}</span>
+                </div>
+            `;
+        });
+        list.innerHTML = html;
+        
+    } catch (err) {
+        console.error("Errore fetch pets dashboard:", err);
+    }
+}
+
+window.addPetSupplyToGroceries = async function (itemName, btnEl) {
+    if (!window.supabase) return;
+    
+    // Feedback visuale immediato
+    const originalHtml = btnEl.innerHTML;
+    btnEl.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-lg"></i>';
+    btnEl.classList.add('pointer-events-none');
+
+    try {
+        const currentUser = await window.getLoggedUser();
+        const familyId = await window.getUserFamilyId();
+        if (!currentUser || !familyId) throw new Error("Utente non loggato");
+
+        const { error } = await window.supabase
+            .from('family_groceries')
+            .insert([{
+                family_id: familyId,
+                added_by: currentUser.id,
+                item_name: itemName,
+                is_checked: false
+            }]);
+
+        if (error) throw error;
+
+        // Feedback Successo
+        btnEl.innerHTML = '<i class="fa-solid fa-check text-green-500 text-lg"></i><span class="text-green-500">Aggiunto!</span>';
+        btnEl.classList.replace('bg-darkblue-base', 'bg-green-500/20');
+        
+        // Ricarica il widget spesa se visibile
+        if (typeof window.fetchUrgentSpesa === 'function') {
+            window.fetchUrgentSpesa();
+        }
+
+        setTimeout(() => {
+            btnEl.innerHTML = originalHtml;
+            btnEl.classList.replace('bg-green-500/20', 'bg-darkblue-base');
+            btnEl.classList.remove('pointer-events-none');
+        }, 1500);
+
+    } catch (err) {
+        console.error("Errore aggiunta spesa:", err);
+        btnEl.innerHTML = '<i class="fa-solid fa-xmark text-red-500 text-lg"></i><span class="text-red-500 text-[10px]">Errore</span>';
+        setTimeout(() => {
+            btnEl.innerHTML = originalHtml;
+            btnEl.classList.remove('pointer-events-none');
+        }, 1500);
+    }
+}
+
+// ==========================================
+// DOCUMENTI IDENTITÀ WIDGET
+// ==========================================
+window.fetchDashDocs = async function() {
+    try {
+        const familyId = await window.getUserFamilyId();
+        if (!familyId) return;
+
+        const list = document.getElementById('dash-docs-list');
+        if (!list) return;
+
+        const { data, error } = await window.supabase
+            .from('family_documents')
+            .select('*, family_members(name)')
+            .eq('family_id', familyId)
+            .eq('category', 'Identità')
+            .order('expiry_date', { ascending: true, nullsFirst: false });
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+            list.innerHTML = `
+                <div class="clay-item p-4 rounded-clay bg-darkblue-base flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform" onclick="if(!window.isGridEditing) window.navigateApp('documenti');">
+                    <i class="fa-regular fa-id-card text-2xl text-darkblue-icon mb-2 opacity-50"></i>
+                    <p class="text-[10px] text-darkblue-icon font-bold uppercase tracking-wider">Nessun Doc. Identità</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+        const docsToShow = data.slice(0, 3);
+        
+        docsToShow.forEach(doc => {
+            let expiryHtml = '<span class="text-[9px] text-darkblue-icon font-medium">Nessuna scadenza</span>';
+            
+            if (doc.expiry_date) {
+                const expDate = new Date(doc.expiry_date);
+                const now = new Date();
+                const diffDays = Math.ceil((expDate - now) / (1000 * 60 * 60 * 24));
+                
+                let textColor = 'text-darkblue-icon';
+                let iconClass = 'fa-regular fa-calendar text-darkblue-accent';
+                
+                if (diffDays < 0) {
+                    textColor = 'text-red-500 font-bold drop-shadow-md';
+                    iconClass = 'fa-solid fa-circle-exclamation text-red-500';
+                } else if (diffDays <= 30) {
+                    textColor = 'text-amber-500 font-bold drop-shadow-md';
+                    iconClass = 'fa-solid fa-triangle-exclamation text-amber-500';
+                }
+
+                expiryHtml = `
+                    <span class="${textColor} text-[9px] flex items-center gap-1 leading-none">
+                        <i class="${iconClass}"></i> ${expDate.toLocaleDateString('it-IT')}
+                    </span>
+                `;
+            }
+
+            const isPdf = doc.file_type === 'application/pdf';
+            const icon = isPdf ? 'fa-file-pdf text-red-500' : 'fa-image text-blue-500';
+
+            html += `
+                <div class="clay-item bg-darkblue-base/70 rounded-xl p-2.5 flex items-center gap-3 active:scale-[0.98] transition-all cursor-pointer" onclick="if(!window.isGridEditing) window.navigateApp('documenti');">
+                    <div class="w-8 h-8 rounded-full bg-darkblue-card flex items-center justify-center text-sm shadow-inner shrink-0 text-white clay-item">
+                       <i class="fa-solid ${icon}"></i>
+                    </div>
+                    <div class="flex flex-col min-w-0 w-full justify-center">
+                        <span class="text-[11px] font-bold text-darkblue-heading truncate w-full mb-0.5">${doc.title}</span>
+                        ${expiryHtml}
+                    </div>
+                </div>
+            `;
+        });
+
+        list.innerHTML = html;
+
+    } catch (err) {
+        console.error("Errore fetch dashboard documenti", err);
     }
 };
