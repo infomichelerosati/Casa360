@@ -212,19 +212,19 @@ function updateCalendarUI() {
                     </div>
                 </div>
                 
-                <div class="flex gap-2">
+                <div class="flex flex-col gap-2">
                     <!-- PRANZO -->
-                    <button class="meal-slot flex-1 bg-darkblue-card rounded-xl p-2 flex flex-col items-center justify-center text-center transition-all hover:bg-darkblue-card/80 min-h-[70px] border border-transparent border-dashed"
+                    <button class="meal-slot flex-1 min-w-0 bg-darkblue-card rounded-xl p-2 flex flex-col items-center justify-center text-center transition-all hover:bg-darkblue-card/80 min-h-[70px] border border-transparent border-dashed"
                             onclick="openSelectMealModal('${dateStr}', 'Pranzo')" id="slot-${dateStr}-Pranzo">
                         <span class="text-[10px] font-bold text-darkblue-icon uppercase tracking-wide mb-1"><i class="fa-regular fa-sun text-yellow-500/70 mr-1"></i> Pranzo</span>
-                        <div class="meal-content text-sm text-darkblue-icon/50 italic">Aggiungi...</div>
+                        <div class="meal-content w-full min-w-0 text-sm text-darkblue-icon/50 italic">Aggiungi...</div>
                     </button>
 
                     <!-- CENA -->
-                    <button class="meal-slot flex-1 bg-darkblue-card rounded-xl p-2 flex flex-col items-center justify-center text-center transition-all hover:bg-darkblue-card/80 min-h-[70px] border border-transparent border-dashed"
+                    <button class="meal-slot flex-1 min-w-0 bg-darkblue-card rounded-xl p-2 flex flex-col items-center justify-center text-center transition-all hover:bg-darkblue-card/80 min-h-[70px] border border-transparent border-dashed"
                             onclick="openSelectMealModal('${dateStr}', 'Cena')" id="slot-${dateStr}-Cena">
                         <span class="text-[10px] font-bold text-darkblue-icon uppercase tracking-wide mb-1"><i class="fa-solid fa-moon text-blue-300/70 mr-1"></i> Cena</span>
-                        <div class="meal-content text-sm text-darkblue-icon/50 italic">Aggiungi...</div>
+                        <div class="meal-content w-full min-w-0 text-sm text-darkblue-icon/50 italic">Aggiungi...</div>
                     </button>
                 </div>
             </div>
@@ -266,19 +266,19 @@ function populateCalendarData() {
             if(plan.recipe_id && plan.family_recipes) {
                 // Ricetta dal DB
                 itemHtml = `
-                    <div class="bg-darkblue-card relative border border-darkblue-icon/10 rounded-lg p-1.5 mb-1.5 flex items-center gap-2 group cursor-default text-left shadow-sm">
-                        <span class="text-base">${plan.family_recipes.emoji}</span>
+                    <div class="bg-darkblue-card relative border border-darkblue-icon/10 rounded-lg p-1.5 mb-1.5 flex items-center gap-2 group cursor-default text-left shadow-sm w-full min-w-0">
+                        <span class="text-base shrink-0">${plan.family_recipes.emoji}</span>
                         <span class="leading-tight text-xs font-bold text-darkblue-heading flex-1 truncate">${plan.family_recipes.name}</span>
-                        <button class="w-5 h-5 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation(); clearMealSlot('${plan.id}')"><i class="fa-solid fa-times text-[10px]"></i></button>
+                        <button class="w-5 h-5 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0" onclick="event.stopPropagation(); clearMealSlot('${plan.id}')"><i class="fa-solid fa-times text-[10px]"></i></button>
                     </div>
                 `;
             } else if (plan.custom_meal_name) {
                 // Testo manuale
                 itemHtml = `
-                    <div class="bg-darkblue-card relative border border-darkblue-icon/10 rounded-lg p-1.5 mb-1.5 flex items-center gap-2 group cursor-default text-left shadow-sm">
-                        <span class="text-base">🍴</span>
+                    <div class="bg-darkblue-card relative border border-darkblue-icon/10 rounded-lg p-1.5 mb-1.5 flex items-center gap-2 group cursor-default text-left shadow-sm w-full min-w-0">
+                        <span class="text-base shrink-0">🍴</span>
                         <span class="leading-tight text-xs font-bold text-darkblue-heading flex-1 truncate">${plan.custom_meal_name}</span>
-                        <button class="w-5 h-5 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation(); clearMealSlot('${plan.id}')"><i class="fa-solid fa-times text-[10px]"></i></button>
+                        <button class="w-5 h-5 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0" onclick="event.stopPropagation(); clearMealSlot('${plan.id}')"><i class="fa-solid fa-times text-[10px]"></i></button>
                     </div>
                 `;
             }
