@@ -256,6 +256,13 @@ function initModuleLogic(moduleName) {
                 console.error("Funzione initDocumenti non trovata.");
             }
             break;
+        case 'pasti':
+            if (typeof initPasti === 'function') {
+                initPasti();
+            } else {
+                console.error("Funzione initPasti non trovata.");
+            }
+            break;
         case 'auth':
             if (typeof initAuth === 'function') {
                 initAuth();
