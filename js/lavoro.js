@@ -3,6 +3,7 @@
 let currentWeekStart = new Date();
 let familyMembersMapLavoro = {}; // id -> member
 let familyMembersListLavoro = []; // array for ordered columns
+let selectedMembersLavoro = []; // ids dei membri visibili (max 2)
 let currentShifts = [];
 let recentTimePresets = JSON.parse(localStorage.getItem('family_os_shift_presets') || '[]');
 
@@ -90,14 +91,14 @@ async function loadFamilyMembersForLavoro() {
         familyMembersListLavoro = data || [];
         familyMembersMapLavoro = {};
 
+        // Inizializza selezione default (primi 2)
+        selectedMembersLavoro = familyMembersListLavoro.slice(0, 2).map(m => m.id);
+        renderMembersFilter();
+
         const memberSelect = document.getElementById('shift-member');
         if (memberSelect) memberSelect.innerHTML = '';
 
-        // Header Grid UI
-        const headerGrid = document.getElementById('shifts-members-header');
-        if (headerGrid) {
-            headerGrid.innerHTML = `<div class="w-12 shrink-0"></div> <!-- Spacer -->`;
-        }
+        renderShiftsMembersHeader();
 
         familyMembersListLavoro.forEach(m => {
             familyMembersMapLavoro[m.id] = m;
@@ -109,20 +110,67 @@ async function loadFamilyMembersForLavoro() {
                 opt.textContent = m.name;
                 memberSelect.appendChild(opt);
             }
-
-            // Popola Header
-            if (headerGrid) {
-                headerGrid.innerHTML += `
-                    <div class="flex-1 text-center font-bold text-darkblue-heading text-xs uppercase bg-darkblue-card rounded-xl py-2 shadow-sm clay-item truncate px-1">
-                        ${m.name}
-                    </div>
-                `;
-            }
         });
 
     } catch (err) {
         console.error("Errore fetch members Lavoro:", err);
     }
+}
+
+function renderMembersFilter() {
+    const filterContainer = document.getElementById('shifts-members-filter');
+    if (!filterContainer) return;
+    filterContainer.innerHTML = '';
+
+    familyMembersListLavoro.forEach(m => {
+        const btn = document.createElement('button');
+        const isSelected = selectedMembersLavoro.includes(m.id);
+        
+        btn.className = `px-3 py-1.5 rounded-full text-[10px] font-bold clay-item transition-all active:scale-95 uppercase ${isSelected ? 'bg-darkblue-accent text-white border-darkblue-accent border-2' : 'bg-darkblue-card text-darkblue-icon border-darkblue-base border-2'}`;
+        btn.textContent = m.name;
+        
+        btn.onclick = () => toggleMemberFilter(m.id);
+        
+        filterContainer.appendChild(btn);
+    });
+}
+
+function toggleMemberFilter(memberId) {
+    if (selectedMembersLavoro.includes(memberId)) {
+        // Deseleziona solo se ce n'è più di uno selezionato
+        if (selectedMembersLavoro.length > 1) {
+            selectedMembersLavoro = selectedMembersLavoro.filter(id => id !== memberId);
+        }
+    } else {
+        // Seleziona
+        selectedMembersLavoro.push(memberId);
+        if (selectedMembersLavoro.length > 2) {
+            // Rimuovi il primo inserito
+            selectedMembersLavoro.shift();
+        }
+    }
+    
+    renderMembersFilter();
+    renderShiftsMembersHeader();
+    renderShiftsGrid();
+}
+
+function renderShiftsMembersHeader() {
+    const headerGrid = document.getElementById('shifts-members-header');
+    if (!headerGrid) return;
+    
+    headerGrid.innerHTML = `<div class="w-12 shrink-0"></div> <!-- Spacer -->`;
+    
+    // Filtra i membri da mostrare
+    const membersToShow = familyMembersListLavoro.filter(m => selectedMembersLavoro.includes(m.id));
+    
+    membersToShow.forEach(m => {
+        headerGrid.innerHTML += `
+            <div class="flex-1 text-center font-bold text-darkblue-heading text-xs uppercase bg-darkblue-card rounded-xl py-2 shadow-sm clay-item truncate px-1">
+                ${m.name}
+            </div>
+        `;
+    });
 }
 
 function updateWeekLabel() {
@@ -203,7 +251,9 @@ function renderShiftsGrid() {
         rowDiv.appendChild(dayDiv);
 
         // Colonne Membri
-        familyMembersListLavoro.forEach(member => {
+        const membersToShow = familyMembersListLavoro.filter(m => selectedMembersLavoro.includes(m.id));
+        
+        membersToShow.forEach(member => {
             const memberCol = document.createElement('div');
             memberCol.className = 'flex-1 bg-darkblue-card clay-item rounded-2xl p-2 flex flex-col justify-center min-w-0';
 
