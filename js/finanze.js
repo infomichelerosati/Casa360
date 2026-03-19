@@ -2,6 +2,15 @@
 
 let finanzeSubscription = null;
 let finanzeMembersMap = {};
+let finanzeCurrentDate = new Date();
+
+function updateFinanzeMonthLabel() {
+    const monthNames = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
+    const label = document.getElementById('fin-month-label');
+    if (label) {
+        label.textContent = `${monthNames[finanzeCurrentDate.getMonth()]} ${finanzeCurrentDate.getFullYear()}`;
+    }
+}
 
 const CAT_COLORS = {
     'Spesa': 'text-green-400 bg-green-500/10',
@@ -23,8 +32,26 @@ async function initFinanze() {
     console.log("Inizializzazione Modulo Finanze...");
 
     // UI Mese
-    const monthNames = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
-    document.getElementById('fin-month-label').textContent = `Spese di ${monthNames[new Date().getMonth()]}`;
+    finanzeCurrentDate = new Date(); // Reset al mese corrente ogni volta che apriamo il tab
+    updateFinanzeMonthLabel();
+
+    const btnPrev = document.getElementById('btn-fin-prev');
+    const btnNext = document.getElementById('btn-fin-next');
+    
+    if (btnPrev) {
+        btnPrev.onclick = () => {
+            finanzeCurrentDate.setMonth(finanzeCurrentDate.getMonth() - 1);
+            updateFinanzeMonthLabel();
+            fetchExpenses();
+        };
+    }
+    if (btnNext) {
+        btnNext.onclick = () => {
+            finanzeCurrentDate.setMonth(finanzeCurrentDate.getMonth() + 1);
+            updateFinanzeMonthLabel();
+            fetchExpenses();
+        };
+    }
 
     // Modale Binding
     const modal = document.getElementById('modal-add-expense');
@@ -78,15 +105,20 @@ async function fetchFinanzeMembers() {
 }
 
 async function fetchExpenses() {
-    // Filtra per mese in corso
-    const now = new Date();
-    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    // Filtra per il mese selezionato
+    const year = finanzeCurrentDate.getFullYear();
+    const month = finanzeCurrentDate.getMonth();
+    
+    // Primo giorno del mese e primo giorno del mese successivo per query range
+    const firstDay = new Date(year, month, 1).toISOString();
+    const nextMonthFirstDay = new Date(year, month + 1, 1).toISOString();
 
     try {
         const { data, error } = await supabase
             .from('family_expenses')
             .select('*')
             .gte('date', firstDay)
+            .lt('date', nextMonthFirstDay)
             .order('date', { ascending: false });
 
         if (error) throw error;

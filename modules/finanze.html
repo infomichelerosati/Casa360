@@ -2,7 +2,15 @@
 <header class="flex justify-between items-center w-full mb-6 mt-2">
     <div>
         <h1 class="text-3xl font-bold text-darkblue-heading mb-1">Finanze</h1>
-        <p class="text-sm font-medium opacity-80" id="fin-month-label">Spese di questo mese</p>
+        <div class="flex items-center gap-3 mt-1">
+            <button id="btn-fin-prev" class="w-8 h-8 rounded-full bg-darkblue-card flex items-center justify-center text-darkblue-icon hover:text-darkblue-heading transition-colors shadow-sm active:scale-95">
+                <i class="fa-solid fa-chevron-left text-xs"></i>
+            </button>
+            <p class="text-sm font-bold text-darkblue-heading tracking-wide uppercase min-w-[120px] text-center" id="fin-month-label">Mese Anno</p>
+            <button id="btn-fin-next" class="w-8 h-8 rounded-full bg-darkblue-card flex items-center justify-center text-darkblue-icon hover:text-darkblue-heading transition-colors shadow-sm active:scale-95">
+                <i class="fa-solid fa-chevron-right text-xs"></i>
+            </button>
+        </div>
     </div>
     <button id="btn-add-expense"
         class="clay-btn-primary w-12 h-12 rounded-full flex items-center justify-center text-white transition-all active:scale-95">
