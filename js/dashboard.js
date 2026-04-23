@@ -1133,13 +1133,35 @@ window.addPetSupplyToGroceries = async function (itemName, btnEl) {
         const familyId = await window.getUserFamilyId();
         if (!currentUser || !familyId) throw new Error("Utente non loggato");
 
+        // 1. Controlla se l'elemento è già presente nella lista della spesa (e non ancora comprato)
+        const { data: existing, error: checkError } = await window.supabase
+            .from('shopping_list')
+            .select('id')
+            .eq('family_id', familyId)
+            .eq('item_name', itemName)
+            .eq('is_bought', false);
+
+        if (checkError) throw checkError;
+
+        if (existing && existing.length > 0) {
+            // Feedback: Già presente
+            btnEl.innerHTML = '<i class="fa-solid fa-info-circle text-amber-500 text-lg"></i><span class="text-amber-500 text-[10px]">Già presente</span>';
+            setTimeout(() => {
+                btnEl.innerHTML = originalHtml;
+                btnEl.classList.remove('pointer-events-none');
+            }, 2000);
+            return;
+        }
+
+        // 2. Inserimento vero e proprio
         const { error } = await window.supabase
-            .from('family_groceries')
+            .from('shopping_list')
             .insert([{
                 family_id: familyId,
                 added_by: currentUser.id,
                 item_name: itemName,
-                is_checked: false
+                is_bought: false,
+                is_urgent: false
             }]);
 
         if (error) throw error;
@@ -1148,7 +1170,7 @@ window.addPetSupplyToGroceries = async function (itemName, btnEl) {
         btnEl.innerHTML = '<i class="fa-solid fa-check text-green-500 text-lg"></i><span class="text-green-500">Aggiunto!</span>';
         btnEl.classList.replace('bg-darkblue-base', 'bg-green-500/20');
         
-        // Ricarica il widget spesa se visibile
+        // Ricarica il widget spesa se visibile sulla dashboard
         if (typeof window.fetchUrgentSpesa === 'function') {
             window.fetchUrgentSpesa();
         }

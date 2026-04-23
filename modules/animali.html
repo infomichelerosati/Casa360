@@ -10,6 +10,18 @@
     </button>
 </header>
 
+<!-- Quick Supplies Actions -->
+<div class="grid grid-cols-2 gap-4 mb-8 px-2">
+    <button onclick="addPetSupplyToGroceries('Cibo Animali', this)" class="clay-card bg-darkblue-card text-darkblue-heading text-sm font-bold rounded-clay py-4 active:scale-95 transition-all flex items-center justify-center gap-3 group">
+        <i class="fa-solid fa-cart-plus text-xl text-darkblue-icon group-hover:text-darkblue-accent transition-colors"></i>
+        <span>Cibo</span>
+    </button>
+    <button onclick="addPetSupplyToGroceries('Lettiera/Sabbia', this)" class="clay-card bg-darkblue-card text-darkblue-heading text-sm font-bold rounded-clay py-4 active:scale-95 transition-all flex items-center justify-center gap-3 group">
+        <i class="fa-solid fa-cart-plus text-xl text-darkblue-icon group-hover:text-darkblue-accent transition-colors"></i>
+        <span>Lettiera</span>
+    </button>
+</div>
+
 <div class="space-y-6" id="pets-container">
     <!-- Contenuto dinamico inserito da JS -->
     <div class="flex justify-center items-center h-48">
