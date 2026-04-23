@@ -97,6 +97,8 @@ async function loadHealthDataForMember(memberId) {
     await loadHealthMeds(memberId);
     // 3. Load Records
     await loadHealthRecords(memberId);
+    // 4. Load Vitals
+    await loadHealthVitals(memberId);
 }
 
 async function loadHealthProfile(memberId) {
@@ -271,6 +273,62 @@ async function loadHealthRecords(memberId) {
 }
 
 
+async function loadHealthVitals(memberId) {
+    try {
+        const { data, error } = await supabase
+            .from('health_vitals_logs')
+            .select('*')
+            .eq('member_id', memberId)
+            .order('recorded_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (error) throw error;
+
+        const display = document.getElementById('health-vitals-display');
+        const lastUpdate = document.getElementById('vitals-last-update');
+        display.innerHTML = '';
+        lastUpdate.textContent = '';
+
+        if (!data) {
+            display.innerHTML = '<div class="text-center py-4 col-span-2 text-darkblue-icon text-sm italic">Nessuna misurazione recente.</div>';
+            return;
+        }
+
+        const dateObj = new Date(data.recorded_at);
+        const dateStr = dateObj.toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+        lastUpdate.textContent = `Ultimo aggiornamento: ${dateStr}`;
+
+        const items = [
+            { label: 'Pressione', value: data.systolic_pressure && data.diastolic_pressure ? `${data.systolic_pressure}/${data.diastolic_pressure}` : '--', unit: 'mmHg', icon: 'fa-heart-pulse', color: 'text-red-400' },
+            { label: 'Battiti', value: data.heart_rate || '--', unit: 'BPM', icon: 'fa-wave-square', color: 'text-blue-400' },
+            { label: 'Glicemia', value: data.blood_sugar || '--', unit: 'mg/dL', icon: 'fa-droplet', color: 'text-amber-500' },
+            { label: 'Peso', value: data.weight || '--', unit: 'kg', icon: 'fa-weight-scale', color: 'text-purple-400' },
+            { label: 'Temp.', value: data.temperature || '--', unit: '°C', icon: 'fa-thermometer-half', color: 'text-emerald-400' }
+        ];
+
+        items.forEach(item => {
+            const el = document.createElement('div');
+            el.className = 'flex flex-col gap-1 p-3 rounded-2xl bg-darkblue-base/30 border border-darkblue-base/50';
+            el.innerHTML = `
+                <div class="flex items-center gap-2 opacity-70">
+                    <i class="fa-solid ${item.icon} text-xs ${item.color}"></i>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-darkblue-icon">${item.label}</span>
+                </div>
+                <div class="flex items-baseline gap-1">
+                    <span class="text-lg font-bold text-darkblue-heading">${item.value}</span>
+                    <span class="text-[9px] font-medium text-darkblue-icon">${item.unit}</span>
+                </div>
+            `;
+            display.appendChild(el);
+        });
+
+    } catch (err) {
+        console.error("Error vitals", err);
+    }
+}
+
+
 function setupSaluteModals() {
     // 1. Modal Profilo
     const modProfile = document.getElementById('modal-health-profile');
@@ -288,6 +346,7 @@ function setupSaluteModals() {
                 document.getElementById('hp-allergies').value = (data.allergies || []).join(', ');
                 document.getElementById('hp-chronic').value = (data.chronic_conditions || []).join(', ');
                 document.getElementById('hp-doctor').value = data.primary_doctor || '';
+                document.getElementById('hp-vitals-interval').value = data.vitals_reminder_interval || 0;
             }
         } catch (e) { }
 
@@ -307,6 +366,7 @@ function setupSaluteModals() {
         const allergiesRaw = document.getElementById('hp-allergies').value;
         const chronicRaw = document.getElementById('hp-chronic').value;
         const doctor = document.getElementById('hp-doctor').value;
+        const interval = parseInt(document.getElementById('hp-vitals-interval').value) || 0;
 
         const allergies = allergiesRaw ? allergiesRaw.split(',').map(s => s.trim()).filter(s => s !== '') : [];
         const chronic = chronicRaw ? chronicRaw.split(',').map(s => s.trim()).filter(s => s !== '') : [];
@@ -324,6 +384,7 @@ function setupSaluteModals() {
                 allergies: allergies,
                 chronic_conditions: chronic,
                 primary_doctor: doctor,
+                vitals_reminder_interval: interval,
                 updated_at: new Date().toISOString()
             };
 
@@ -421,5 +482,51 @@ function setupSaluteModals() {
             closeRecordModal();
             loadHealthRecords(sltCurrentMemberId);
         } catch (err) { console.error("Error save record", err); }
+    });
+
+    // 4. Modal Vitals
+    const modVitals = document.getElementById('modal-health-vitals');
+    const modVitalsContent = document.getElementById('modal-content-health-vitals');
+
+    document.getElementById('btn-add-vitals')?.addEventListener('click', () => {
+        document.getElementById('form-health-vitals').reset();
+        modVitals.classList.remove('opacity-0', 'pointer-events-none');
+        modVitalsContent.classList.remove('translate-y-full');
+    });
+
+    const closeVitalsModal = () => {
+        modVitals.classList.add('opacity-0', 'pointer-events-none');
+        modVitalsContent.classList.add('translate-y-full');
+    };
+    document.getElementById('btn-close-h-vitals').addEventListener('click', closeVitalsModal);
+    modVitals.addEventListener('click', (e) => { if (e.target === modVitals) closeVitalsModal(); });
+
+    document.getElementById('form-health-vitals').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const payload = {
+            member_id: sltCurrentMemberId,
+            systolic_pressure: parseInt(document.getElementById('hv-systolic').value) || null,
+            diastolic_pressure: parseInt(document.getElementById('hv-diastolic').value) || null,
+            heart_rate: parseInt(document.getElementById('hv-heart-rate').value) || null,
+            blood_sugar: parseFloat(document.getElementById('hv-blood-sugar').value) || null,
+            weight: parseFloat(document.getElementById('hv-weight').value) || null,
+            temperature: parseFloat(document.getElementById('hv-temp').value) || null,
+            recorded_at: new Date().toISOString()
+        };
+
+        try {
+            const familyId = await window.getUserFamilyId();
+            payload.family_id = familyId;
+
+            const { error } = await supabase.from('health_vitals_logs').insert([payload]);
+            if (error) throw error;
+
+            closeVitalsModal();
+            loadHealthVitals(sltCurrentMemberId);
+        } catch (err) {
+            console.error("Error saving vitals", err);
+            alert("Errore durante il salvataggio dei parametri.");
+        }
     });
 }

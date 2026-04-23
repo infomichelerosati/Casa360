@@ -96,7 +96,7 @@ async function fetchEvents() {
     const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 2, 0).toISOString();
 
     try {
-        const [eventsRes, vehRes, petsRes, shiftsRes, docsRes] = await Promise.all([
+        const [eventsRes, vehRes, petsRes, shiftsRes, docsRes, healthProfilesRes, vitalsLogsRes] = await Promise.all([
             supabase.from('calendar_events')
                 .select('*')
                 .gte('start_time', firstDay)
@@ -112,7 +112,9 @@ async function fetchEvents() {
             supabase.from('family_documents')
                 .select('id, title, category, expiry_date, family_members(name)')
                 .gte('expiry_date', getLocalDayStr(new Date(firstDay)))
-                .lte('expiry_date', getLocalDayStr(new Date(lastDay)))
+                .lte('expiry_date', getLocalDayStr(new Date(lastDay))),
+            supabase.from('health_profiles').select('member_id, vitals_reminder_interval, family_members(name)'),
+            supabase.from('health_vitals_logs').select('member_id, recorded_at').order('recorded_at', { ascending: false })
         ]);
 
         if (eventsRes.error) throw eventsRes.error;
@@ -120,6 +122,8 @@ async function fetchEvents() {
         if (petsRes.error) throw petsRes.error;
         if (shiftsRes.error) throw shiftsRes.error;
         if (docsRes.error) throw docsRes.error;
+        if (healthProfilesRes.error) throw healthProfilesRes.error;
+        if (vitalsLogsRes.error) throw vitalsLogsRes.error;
 
         let data = eventsRes.data;
 
@@ -195,6 +199,41 @@ async function fetchEvents() {
                     is_virtual: true,
                     virtual_type: 'doc'
                 });
+            });
+        }
+
+        // Generazione Eventi Virtuali per Parametri Vitali
+        if (healthProfilesRes.data) {
+            healthProfilesRes.data.forEach(profile => {
+                const interval = profile.vitals_reminder_interval;
+                if (interval && interval > 0) {
+                    const memberId = profile.member_id;
+                    const memberName = profile.family_members ? profile.family_members.name : 'Membro';
+                    
+                    // Trova l'ultima misurazione per questo membro
+                    const lastLog = vitalsLogsRes.data.find(l => l.member_id === memberId);
+                    
+                    if (lastLog) {
+                        const lastDate = new Date(lastLog.recorded_at);
+                        const nextDate = new Date(lastDate);
+                        nextDate.setDate(nextDate.getDate() + interval);
+                        
+                        const nextDateStr = getLocalDayStr(nextDate);
+                        
+                        if (nextDateStr >= firstDayStr && nextDateStr <= lastDayStr) {
+                            data.push({
+                                id: 'vitals-' + memberId,
+                                title: `Misura Parametri Vitali (${memberName})`,
+                                start_time: `${nextDateStr}T08:00:00Z`,
+                                end_time: `${nextDateStr}T09:00:00Z`,
+                                event_type: 'Visita Medica',
+                                is_virtual: true,
+                                virtual_type: 'health',
+                                assigned_to: memberId
+                            });
+                        }
+                    }
+                }
             });
         }
 
@@ -328,6 +367,8 @@ function renderDayEvents() {
                 deleteButton = `<div class="text-xs text-darkblue-icon/50 uppercase font-bold text-center mt-2 flex items-center justify-center gap-1"><i class="fa-solid fa-briefcase"></i> Turni</div>`;
             } else if (ev.virtual_type === 'doc') {
                 deleteButton = `<div class="text-xs text-darkblue-icon/50 uppercase font-bold text-center mt-2 flex items-center justify-center gap-1"><i class="fa-solid fa-folder"></i> Archivio</div>`;
+            } else if (ev.virtual_type === 'health') {
+                deleteButton = `<div class="text-xs text-darkblue-icon/50 uppercase font-bold text-center mt-2 flex items-center justify-center gap-1"><i class="fa-solid fa-notes-medical"></i> Salute</div>`;
             } else {
                 deleteButton = `<div class="text-xs text-darkblue-icon/50 uppercase font-bold text-center mt-2 flex items-center justify-center gap-1"><i class="fa-solid fa-car"></i> Veicoli</div>`;
             }
