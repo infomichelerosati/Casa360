@@ -488,8 +488,20 @@ function setupSaluteModals() {
     const modVitals = document.getElementById('modal-health-vitals');
     const modVitalsContent = document.getElementById('modal-content-health-vitals');
 
-    document.getElementById('btn-add-vitals')?.addEventListener('click', () => {
+    document.getElementById('btn-add-vitals')?.addEventListener('click', async () => {
         document.getElementById('form-health-vitals').reset();
+        
+        // Recupera l'intervallo attuale dal profilo per pre-popolare il campo
+        if (sltCurrentMemberId) {
+            const { data } = await supabase.from('health_profiles')
+                .select('vitals_reminder_interval')
+                .eq('member_id', sltCurrentMemberId)
+                .maybeSingle();
+            if (data) {
+                document.getElementById('hv-interval').value = data.vitals_reminder_interval || 0;
+            }
+        }
+
         modVitals.classList.remove('opacity-0', 'pointer-events-none');
         modVitalsContent.classList.remove('translate-y-full');
     });
@@ -515,6 +527,8 @@ function setupSaluteModals() {
             recorded_at: new Date().toISOString()
         };
 
+        const interval = parseInt(document.getElementById('hv-interval').value) || 0;
+
         try {
             const familyId = await window.getUserFamilyId();
             payload.family_id = familyId;
@@ -522,8 +536,18 @@ function setupSaluteModals() {
             const { error } = await supabase.from('health_vitals_logs').insert([payload]);
             if (error) throw error;
 
+            // Aggiorna l'intervallo nel profilo salute (se esiste)
+            if (sltCurrentMemberId) {
+                await supabase.from('health_profiles')
+                    .update({ vitals_reminder_interval: interval })
+                    .eq('member_id', sltCurrentMemberId);
+            }
+
             closeVitalsModal();
             loadHealthVitals(sltCurrentMemberId);
+            
+            // Se siamo nel calendario, forziamo il refresh per vedere il nuovo promemoria
+            if (typeof window.fetchEvents === 'function') window.fetchEvents();
         } catch (err) {
             console.error("Error saving vitals", err);
             alert("Errore durante il salvataggio dei parametri.");
