@@ -10,6 +10,9 @@ async function initSalute() {
     // Setup modals
     setupSaluteModals();
 
+    // Setup Report Export
+    document.getElementById('btn-export-report')?.addEventListener('click', exportHealthReport);
+
     await loadFamilyMembersForSalute();
 }
 
@@ -86,6 +89,7 @@ function selectMember(memberId) {
     document.getElementById('health-empty-state').classList.add('hidden');
     document.getElementById('health-content-area').classList.remove('hidden');
     document.getElementById('health-content-area').classList.add('flex');
+    document.getElementById('btn-export-report')?.classList.remove('hidden');
 
     loadHealthDataForMember(memberId);
 }
@@ -553,4 +557,174 @@ function setupSaluteModals() {
             alert("Errore durante il salvataggio dei parametri.");
         }
     });
+}
+
+async function exportHealthReport() {
+    if (!sltCurrentMemberId) return;
+
+    // Feedback visuale caricamento
+    const btn = document.getElementById('btn-export-report');
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> <span class="text-[10px]">Generazione...</span>';
+    btn.classList.add('pointer-events-none');
+
+    try {
+        const member = sltFamilyMembers.find(m => m.id === sltCurrentMemberId);
+        if (!member) throw new Error("Membro non trovato");
+
+        // 1. Recupero di TUTTI i dati per il report
+        const [profileRes, medsRes, recordsRes, vitalsRes] = await Promise.all([
+            supabase.from('health_profiles').select('*').eq('member_id', sltCurrentMemberId).maybeSingle(),
+            supabase.from('health_medications').select('*').eq('assigned_to', sltCurrentMemberId),
+            supabase.from('health_records').select('*').eq('member_id', sltCurrentMemberId).order('record_date', { ascending: false }),
+            supabase.from('health_vitals_logs').select('*').eq('member_id', sltCurrentMemberId).order('recorded_at', { ascending: false }).limit(20)
+        ]);
+
+        const profile = profileRes.data;
+        const meds = medsRes.data || [];
+        const records = recordsRes.data || [];
+        const vitals = vitalsRes.data || [];
+
+        // 2. Costruzione del Template HTML per il PDF (Stile Professionale Medico)
+        const reportContainer = document.createElement('div');
+        reportContainer.style.padding = '40px';
+        reportContainer.style.backgroundColor = '#ffffff';
+        reportContainer.style.color = '#1a2235';
+        reportContainer.style.fontFamily = "'Helvetica', 'Arial', sans-serif";
+
+        reportContainer.innerHTML = `
+            <!-- Header Report -->
+            <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #3b82f6; padding-bottom: 20px; margin-bottom: 30px;">
+                <div>
+                    <h1 style="margin: 0; color: #3b82f6; font-size: 28px; letter-spacing: -1px;">FAMILY OS</h1>
+                    <p style="margin: 5px 0 0; font-weight: 800; color: #64748b; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Report Medico Personale</p>
+                </div>
+                <div style="text-align: right; color: #64748b; font-size: 11px;">
+                    <p style="margin: 0;">Data Generazione: <strong>${new Date().toLocaleDateString('it-IT')}</strong></p>
+                    <p style="margin: 5px 0 0;">Paziente: <strong style="color: #1a2235; font-size: 16px;">${member.name}</strong></p>
+                </div>
+            </div>
+
+            <!-- Info Profilo -->
+            <div style="margin-bottom: 30px;">
+                <h2 style="font-size: 16px; color: #3b82f6; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; margin-bottom: 15px;">Dati Anagrafici e Clinici</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div style="background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                        <p style="margin: 0 0 5px; font-size: 10px; color: #64748b; font-weight: bold;">GRUPPO SANGUIGNO</p>
+                        <p style="margin: 0; font-size: 18px; font-weight: bold; color: #ef4444;">${profile?.blood_type || 'Non specificato'}</p>
+                    </div>
+                    <div style="background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                        <p style="margin: 0 0 5px; font-size: 10px; color: #64748b; font-weight: bold;">MEDICO CURANTE</p>
+                        <p style="margin: 0; font-size: 14px; font-weight: bold;">${profile?.primary_doctor || 'Non specificato'}</p>
+                    </div>
+                </div>
+                <div style="margin-top: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <p style="margin: 0 0 5px; font-size: 10px; color: #64748b; font-weight: bold;">ALLERGIE</p>
+                        <p style="margin: 0; font-size: 12px; line-height: 1.5;">${(profile?.allergies || []).join(', ') || 'Nessuna allergia segnalata'}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 5px; font-size: 10px; color: #64748b; font-weight: bold;">CONDIZIONI CRONICHE</p>
+                        <p style="margin: 0; font-size: 12px; line-height: 1.5;">${(profile?.chronic_conditions || []).join(', ') || 'Nessuna patologia cronica'}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Terapie -->
+            <div style="margin-bottom: 30px;">
+                <h2 style="font-size: 16px; color: #3b82f6; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; margin-bottom: 15px;">Terapie Farmacologiche Attive</h2>
+                ${meds.length > 0 ? `
+                    <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                        <thead>
+                            <tr style="background: #3b82f6; color: #ffffff;">
+                                <th style="padding: 10px; text-align: left; border: 1px solid #3b82f6;">Farmaco</th>
+                                <th style="padding: 10px; text-align: left; border: 1px solid #3b82f6;">Dosaggio</th>
+                                <th style="padding: 10px; text-align: left; border: 1px solid #3b82f6;">Frequenza</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${meds.map(m => `
+                                <tr>
+                                    <td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: bold;">${m.name}</td>
+                                    <td style="padding: 10px; border: 1px solid #e2e8f0;">${m.dosage || '-'}</td>
+                                    <td style="padding: 10px; border: 1px solid #e2e8f0;">${m.frequency || '-'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                ` : '<p style="font-style: italic; color: #94a3b8; font-size: 12px;">Nessuna terapia registrata.</p>'}
+            </div>
+
+            <!-- Parametri Vitali -->
+            <div style="margin-bottom: 30px;">
+                <h2 style="font-size: 16px; color: #3b82f6; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; margin-bottom: 15px;">Ultime Misurazioni Parametri</h2>
+                ${vitals.length > 0 ? `
+                    <table style="width: 100%; border-collapse: collapse; font-size: 11px; text-align: center;">
+                        <thead>
+                            <tr style="background: #f1f5f9; color: #475569;">
+                                <th style="padding: 8px; border: 1px solid #e2e8f0;">Data</th>
+                                <th style="padding: 8px; border: 1px solid #e2e8f0;">Press. (MAX/MIN)</th>
+                                <th style="padding: 8px; border: 1px solid #e2e8f0;">BPM</th>
+                                <th style="padding: 8px; border: 1px solid #e2e8f0;">Glicemia</th>
+                                <th style="padding: 8px; border: 1px solid #e2e8f0;">Peso</th>
+                                <th style="padding: 8px; border: 1px solid #e2e8f0;">Temp.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${vitals.slice(0, 8).map(v => `
+                                <tr>
+                                    <td style="padding: 8px; border: 1px solid #e2e8f0; font-weight: bold;">${new Date(v.recorded_at).toLocaleDateString('it-IT')}</td>
+                                    <td style="padding: 8px; border: 1px solid #e2e8f0;">${v.systolic_pressure || '-'}/${v.diastolic_pressure || '-'}</td>
+                                    <td style="padding: 8px; border: 1px solid #e2e8f0;">${v.heart_rate || '-'}</td>
+                                    <td style="padding: 8px; border: 1px solid #e2e8f0;">${v.blood_sugar || '-'}</td>
+                                    <td style="padding: 8px; border: 1px solid #e2e8f0;">${v.weight || '-'} kg</td>
+                                    <td style="padding: 8px; border: 1px solid #e2e8f0;">${v.temperature || '-'} °C</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                ` : '<p style="font-style: italic; color: #94a3b8; font-size: 12px;">Nessuna misurazione recente.</p>'}
+            </div>
+
+            <!-- Storico Eventi -->
+            <div style="margin-bottom: 30px; page-break-before: auto;">
+                <h2 style="font-size: 16px; color: #3b82f6; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; margin-bottom: 15px;">Storico Eventi Medici</h2>
+                ${records.length > 0 ? records.map(r => `
+                    <div style="margin-bottom: 15px; padding: 10px; border-left: 3px solid #cbd5e1; background: #f8fafc;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span style="font-size: 10px; font-weight: bold; color: #3b82f6; text-transform: uppercase;">${r.record_type}</span>
+                            <span style="font-size: 10px; color: #64748b;">${new Date(r.record_date).toLocaleDateString('it-IT')}</span>
+                        </div>
+                        <h4 style="margin: 0; font-size: 14px; color: #1a2235;">${r.title}</h4>
+                        ${r.description ? `<p style="margin: 5px 0 0; font-size: 11px; color: #475569; line-height: 1.4;">${r.description}</p>` : ''}
+                    </div>
+                `).join('') : '<p style="font-style: italic; color: #94a3b8; font-size: 12px;">Nessun evento registrato nello storico.</p>'}
+            </div>
+
+            <!-- Footer -->
+            <div style="margin-top: 60px; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+                <p style="margin: 0; font-size: 10px; color: #94a3b8;">Family OS - Piattaforma di Gestione Familiare Integrata</p>
+                <p style="margin: 5px 0 0; font-size: 9px; color: #cbd5e1;">Questo documento ha scopo puramente informativo e non sostituisce il parere di un medico professionista.</p>
+            </div>
+        `;
+
+        // 3. Generazione PDF con html2pdf
+        const options = {
+            margin: 10,
+            filename: `Report_Salute_${member.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, logging: false },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        // Genera e scarica
+        await html2pdf().set(options).from(reportContainer).save();
+
+    } catch (err) {
+        console.error("Errore export report:", err);
+        alert("Si è verificato un errore durante la generazione del report PDF.");
+    } finally {
+        btn.innerHTML = originalHtml;
+        btn.classList.remove('pointer-events-none');
+    }
 }
