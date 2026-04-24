@@ -1,6 +1,6 @@
 // sw.js - Service Worker per Family OS
 // Aggiornando questo CACHE_NAME (es. v2, v3), forziamo il browser a scaricare i nuovi file cache-first, ma useremo Network-First per HTML/JS
-const CACHE_NAME = 'family-os-v2';
+const CACHE_NAME = 'family-os-v3';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -13,7 +13,7 @@ const ASSETS_TO_CACHE = [
     './js/calendario.js',
     './js/finanze.js',
     './js/veicoli.js',
-    './js/salute.js',
+    './js/salute.js?v=1.1',
     './js/famiglia.js',
     './js/animali.js',
     './js/lavoro.js',

@@ -9,9 +9,12 @@ let sltCharts = {}; // Riferimento per distruggere i grafici Chart.js esistenti
 
 async function initSalute() {
     console.log("Inizializzazione Modulo Salute...");
-
-    // Setup modals
-    setupSaluteModals();
+    try {
+        // Setup modals
+        setupSaluteModals();
+    } catch (err) {
+        console.error("Errore setupSaluteModals:", err);
+    }
 
     // Setup Report Export
     document.getElementById('btn-export-report')?.addEventListener('click', exportHealthReport);
@@ -588,13 +591,16 @@ function setupSaluteModals() {
     });
 
     // 5. Navigation Buttons
+    console.log("Setting up vitals navigation listeners...");
     document.getElementById('btn-prev-vitals')?.addEventListener('click', () => {
+        console.log("Prev clicked, current index:", sltCurrentVitalsIndex);
         if (sltCurrentVitalsIndex < sltVitalsHistory.length - 1) {
             sltCurrentVitalsIndex++;
             renderCurrentVitals();
         }
     });
     document.getElementById('btn-next-vitals')?.addEventListener('click', () => {
+        console.log("Next clicked, current index:", sltCurrentVitalsIndex);
         if (sltCurrentVitalsIndex > 0) {
             sltCurrentVitalsIndex--;
             renderCurrentVitals();
@@ -602,21 +608,24 @@ function setupSaluteModals() {
     });
 
     // 6. Modal Charts
+    console.log("Setting up charts modal listeners...");
     const modCharts = document.getElementById('modal-health-charts');
     const modChartsContent = document.getElementById('modal-content-health-charts');
 
     document.getElementById('btn-show-vitals-charts')?.addEventListener('click', () => {
-        modCharts.classList.remove('opacity-0', 'pointer-events-none');
-        modChartsContent.classList.remove('translate-y-full');
+        console.log("Opening charts modal...");
+        modCharts?.classList.remove('opacity-0', 'pointer-events-none');
+        modChartsContent?.classList.remove('translate-y-full');
         renderHealthCharts();
     });
 
     const closeChartsModal = () => {
-        modCharts.classList.add('opacity-0', 'pointer-events-none');
-        modChartsContent.classList.add('translate-y-full');
+        modCharts?.classList.add('opacity-0', 'pointer-events-none');
+        modChartsContent?.classList.add('translate-y-full');
     };
-    document.getElementById('btn-close-h-charts').addEventListener('click', closeChartsModal);
-    modCharts.addEventListener('click', (e) => { if (e.target === modCharts) closeChartsModal(); });
+    document.getElementById('btn-close-h-charts')?.addEventListener('click', closeChartsModal);
+    modCharts?.addEventListener('click', (e) => { if (e.target === modCharts) closeChartsModal(); });
+    console.log("Salute listeners setup complete.");
 }
 
 async function renderHealthCharts() {
