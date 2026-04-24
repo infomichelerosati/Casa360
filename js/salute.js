@@ -754,7 +754,7 @@ async function exportHealthReport() {
             </div>
 
             <!-- Info Profilo -->
-            <div style="margin-bottom: 30px;">
+            <div style="margin-bottom: 30px; page-break-inside: avoid;">
                 <h2 style="font-size: 16px; color: #3b82f6; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; margin-bottom: 15px;">Dati Anagrafici e Clinici</h2>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                     <div style="background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0;">
@@ -779,7 +779,7 @@ async function exportHealthReport() {
             </div>
 
             <!-- Terapie -->
-            <div style="margin-bottom: 30px;">
+            <div style="margin-bottom: 30px; page-break-inside: avoid;">
                 <h2 style="font-size: 16px; color: #3b82f6; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; margin-bottom: 15px;">Terapie Farmacologiche Attive</h2>
                 ${meds.length > 0 ? `
                     <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
@@ -821,7 +821,7 @@ async function exportHealthReport() {
                         </thead>
                         <tbody>
                             ${vitals.slice(0, 10).map(v => `
-                                <tr>
+                                <tr style="page-break-inside: avoid;">
                                     <td style="padding: 8px; border: 1px solid #e2e8f0; font-weight: bold;">${new Date(v.recorded_at).toLocaleDateString('it-IT')}</td>
                                     <td style="padding: 8px; border: 1px solid #e2e8f0;">${v.systolic_pressure || '-'}/${v.diastolic_pressure || '-'}</td>
                                     <td style="padding: 8px; border: 1px solid #e2e8f0;">${v.heart_rate || '-'}</td>
@@ -838,10 +838,10 @@ async function exportHealthReport() {
             </div>
 
             <!-- Storico Eventi -->
-            <div style="margin-bottom: 30px; page-break-before: auto;">
+            <div style="margin-bottom: 30px;">
                 <h2 style="font-size: 16px; color: #3b82f6; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; margin-bottom: 15px;">Storico Eventi Medici</h2>
                 ${records.length > 0 ? records.map(r => `
-                    <div style="margin-bottom: 15px; padding: 10px; border-left: 3px solid #cbd5e1; background: #f8fafc;">
+                    <div style="margin-bottom: 15px; padding: 10px; border-left: 3px solid #cbd5e1; background: #f8fafc; page-break-inside: avoid;">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
                             <span style="font-size: 10px; font-weight: bold; color: #3b82f6; text-transform: uppercase;">${r.record_type}</span>
                             <span style="font-size: 10px; color: #64748b;">${new Date(r.record_date).toLocaleDateString('it-IT')}</span>
@@ -865,7 +865,8 @@ async function exportHealthReport() {
             filename: `Report_Salute_${member.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2, useCORS: true, logging: false },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
         };
 
         // Genera e scarica
