@@ -582,6 +582,22 @@ window.updateNotificationBadges = async function () {
              }
         }
 
+        // 12. SMART COACHING TIP (Sempre presente, ruota 3 volte al giorno)
+        if (typeof window.getSmartTip === 'function') {
+            const tip = window.getSmartTip();
+            if (tip && !isDismissed(tip.id)) {
+                notifications.push({
+                    id: tip.id,
+                    type: tip.module,
+                    title: tip.title,
+                    msg: tip.msg,
+                    icon: tip.icon,
+                    color: tip.color,
+                    isSuggestion: true
+                });
+            }
+        }
+
         window.globalNotifications = notifications.filter(n => !isDismissed(n.id || n.title));
 
         // AGGIORNAMENTO UI:
