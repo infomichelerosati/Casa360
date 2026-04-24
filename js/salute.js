@@ -315,8 +315,10 @@ function renderCurrentVitals() {
         display.innerHTML = '<div class="text-center py-4 col-span-2 text-darkblue-icon text-sm italic">Nessuna misurazione recente.</div>';
         btnPrev.disabled = true;
         btnNext.disabled = true;
+        document.getElementById('btn-delete-vitals').classList.add('hidden');
         return;
     }
+    document.getElementById('btn-delete-vitals').classList.remove('hidden');
 
     const data = sltVitalsHistory[sltCurrentVitalsIndex];
     const dateObj = new Date(data.recorded_at);
@@ -598,6 +600,33 @@ function setupSaluteModals() {
             sltCurrentVitalsIndex++;
             renderCurrentVitals();
         }
+    });
+
+    document.getElementById('btn-delete-vitals')?.addEventListener('click', () => {
+        const currentData = sltVitalsHistory[sltCurrentVitalsIndex];
+        if (!currentData) return;
+
+        window.showConfirmModal(
+            "Elimina Misurazione", 
+            "Vuoi eliminare definitivamente questa registrazione dei parametri vitali?", 
+            async () => {
+                try {
+                    const { error } = await supabase
+                        .from('health_vitals_logs')
+                        .delete()
+                        .eq('id', currentData.id);
+
+                    if (error) throw error;
+                    
+                    // Ricarica i dati
+                    loadHealthVitals(sltCurrentMemberId);
+                    window.showToast("Eliminato", "Registrazione rimossa con successo", "fa-trash-can", "text-red-400");
+                } catch (err) {
+                    console.error("Error deleting vitals:", err);
+                    alert("Errore durante l'eliminazione.");
+                }
+            }
+        );
     });
     document.getElementById('btn-next-vitals')?.addEventListener('click', () => {
         console.log("Next clicked, current index:", sltCurrentVitalsIndex);
