@@ -527,6 +527,26 @@ async function initRealtimeSubscriptions() {
                     }
                 }
             )
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'sport_activities',
+                    filter: `family_id=eq.${familyId}`
+                },
+                (payload) => {
+                    // Refresh Dashboard Sport Widget
+                    if (typeof window.fetchNextSport === 'function') window.fetchNextSport();
+                    
+                    if (payload.eventType === 'INSERT') {
+                        const s = payload.new;
+                        // Notifica solo se non è l'utente corrente
+                        // (Ma per sport potrebbe essere utile a tutti vedere il nuovo allenamento pianificato)
+                        showToast(`🏀 Sport: ${s.sport_name}`, `Allenamento inserito per il ${s.activity_date}`, 'fa-volleyball', 'text-orange-500');
+                    }
+                }
+            )
             .subscribe((status) => {
                 console.log("Stato Sottoscrizione Realtime:", status);
             });

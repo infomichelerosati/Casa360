@@ -19,6 +19,7 @@ async function initDashboard() {
     fetchAppInstalls();
     fetchDashPets();
     fetchDashDocs();
+    fetchNextSport();
 
     // Al primo caricamento, prova a scaricare il meteo basandosi sull'ultima posizione (se salvata in localStorage) o fallback Roma.
     // Il permesso geolocalizzazione verrà chiesto la prima volta che si esegue la funzione meteo vera e propria.
@@ -93,6 +94,8 @@ async function initGridStack() {
                     icon = 'fa-folder-open'; title = 'Archivio';
                 } else if (widgetType === 'widget-animali') {
                     icon = 'fa-paw'; title = 'Animali';
+                } else if (widgetType === 'widget-sport') {
+                    icon = 'fa-volleyball'; title = 'Sport';
                 }
 
                 item.el.setAttribute('data-dock-icon', icon);
@@ -326,6 +329,7 @@ async function loadGridLayout() {
                         else if (widgetType === 'widget-lavoro') { icon = 'fa-briefcase'; title = 'Turni'; }
                         else if (widgetType === 'widget-documenti') { icon = 'fa-folder-open'; title = 'Archivio'; }
                         else if (widgetType === 'widget-animali') { icon = 'fa-paw'; title = 'Animali'; }
+                        else if (widgetType === 'widget-sport') { icon = 'fa-volleyball'; title = 'Sport'; }
 
                         el.setAttribute('data-dock-icon', icon);
                         el.setAttribute('data-dock-title', title);
@@ -1272,3 +1276,56 @@ window.fetchDashDocs = async function() {
         console.error("Errore fetch dashboard documenti", err);
     }
 };
+
+// ==========================================
+// SPORT - PROSSIMO ALLENAMENTO
+// ==========================================
+window.fetchNextSport = async function() {
+    const titleEl = document.getElementById('dash-sport-name');
+    const timeEl = document.getElementById('dash-sport-time');
+    const statusEl = document.getElementById('dash-sport-status');
+    if (!titleEl) return;
+
+    try {
+        const todayStr = new Date().toISOString().split('T')[0];
+        
+        // Cerchiamo la prossima attività non completata da oggi in poi
+        const { data, error } = await supabase
+            .from('sport_activities')
+            .select('*, family_members(name)')
+            .eq('is_completed', false)
+            .gte('activity_date', todayStr)
+            .order('activity_date', { ascending: true })
+            .order('start_time', { ascending: true })
+            .limit(1);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+            const next = data[0];
+            const memberName = next.family_members ? next.family_members.name : 'Membro';
+            
+            titleEl.textContent = `${next.sport_name}`;
+            
+            const date = new Date(next.activity_date);
+            const isToday = next.activity_date === todayStr;
+            const dayLabel = isToday ? 'Oggi' : date.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
+            const timeLabel = next.start_time ? next.start_time.substring(0, 5) : '--:--';
+            
+            timeEl.textContent = `${dayLabel} alle ${timeLabel}`;
+            statusEl.textContent = memberName;
+            statusEl.classList.remove('text-darkblue-icon/60');
+            statusEl.classList.add('text-darkblue-accent');
+        } else {
+            titleEl.textContent = "Nessuno";
+            timeEl.textContent = "--:--";
+            statusEl.textContent = "Sport";
+            statusEl.classList.add('text-darkblue-icon/60');
+            statusEl.classList.remove('text-darkblue-accent');
+        }
+
+    } catch (err) {
+        console.error("Errore fetch dashboard sport", err);
+    }
+};
+

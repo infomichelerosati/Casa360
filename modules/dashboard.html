@@ -214,6 +214,27 @@
     </div>
 
 
+    <!-- WIDGET SPORT -->
+    <div class="grid-stack-item" gs-id="widget-sport" gs-w="12" gs-h="4" gs-x="0" gs-y="28">
+        <div class="grid-stack-item-content">
+            <div id="dash-sport-widget"
+                class="clay-card bg-darkblue-card rounded-clay p-5 h-full flex flex-col justify-between cursor-pointer active:scale-95 transition-transform"
+                onclick="if(!window.isGridEditing) navigateApp('sport');">
+                <div class="flex justify-between items-start w-full">
+                    <div class="w-10 h-10 rounded-full bg-darkblue-base text-orange-500 flex items-center justify-center shadow-inner z-10 relative">
+                        <i class="fa-solid fa-volleyball"></i>
+                    </div>
+                    <div id="dash-sport-status" class="text-[10px] font-bold uppercase tracking-wider text-darkblue-icon/60 mt-1">Sport</div>
+                </div>
+                <div class="z-10 relative mt-2">
+                    <h3 id="dash-sport-title" class="text-sm leading-tight text-darkblue-icon truncate">Prossimo Allenamento</h3>
+                    <h3 id="dash-sport-name" class="text-lg leading-tight font-bold text-darkblue-heading mt-1 line-clamp-1">Caricamento...</h3>
+                    <p id="dash-sport-time" class="text-xs text-darkblue-accent font-medium mt-0.5">--:--</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div> <!--/GRIDSTACK CONTAINER-->
 </section>
 </div>
