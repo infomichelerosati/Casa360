@@ -306,6 +306,7 @@ async function loadHealthVitals(memberId) {
         const items = [
             { label: 'Pressione', value: data.systolic_pressure && data.diastolic_pressure ? `${data.systolic_pressure}/${data.diastolic_pressure}` : '--', unit: 'mmHg', icon: 'fa-heart-pulse', color: 'text-red-400' },
             { label: 'Battiti', value: data.heart_rate || '--', unit: 'BPM', icon: 'fa-wave-square', color: 'text-blue-400' },
+            { label: 'Saturaz.', value: data.oxygen_saturation || '--', unit: '%', icon: 'fa-lungs', color: 'text-cyan-400' },
             { label: 'Glicemia', value: data.blood_sugar || '--', unit: 'mg/dL', icon: 'fa-droplet', color: 'text-amber-500' },
             { label: 'Peso', value: data.weight || '--', unit: 'kg', icon: 'fa-weight-scale', color: 'text-purple-400' },
             { label: 'Temp.', value: data.temperature || '--', unit: '°C', icon: 'fa-thermometer-half', color: 'text-emerald-400' }
@@ -525,9 +526,11 @@ function setupSaluteModals() {
             systolic_pressure: parseInt(document.getElementById('hv-systolic').value) || null,
             diastolic_pressure: parseInt(document.getElementById('hv-diastolic').value) || null,
             heart_rate: parseInt(document.getElementById('hv-heart-rate').value) || null,
+            oxygen_saturation: parseInt(document.getElementById('hv-saturation').value) || null,
             blood_sugar: parseFloat(document.getElementById('hv-blood-sugar').value) || null,
             weight: parseFloat(document.getElementById('hv-weight').value) || null,
             temperature: parseFloat(document.getElementById('hv-temp').value) || null,
+            notes: document.getElementById('hv-notes').value || null,
             recorded_at: new Date().toISOString()
         };
 
@@ -663,23 +666,26 @@ async function exportHealthReport() {
                         <thead>
                             <tr style="background: #f1f5f9; color: #475569;">
                                 <th style="padding: 8px; border: 1px solid #e2e8f0;">Data</th>
-                                <th style="padding: 8px; border: 1px solid #e2e8f0;">Press. (MAX/MIN)</th>
+                                <th style="padding: 8px; border: 1px solid #e2e8f0;">Press.</th>
                                 <th style="padding: 8px; border: 1px solid #e2e8f0;">BPM</th>
-                                <th style="padding: 8px; border: 1px solid #e2e8f0;">Glicemia</th>
+                                <th style="padding: 8px; border: 1px solid #e2e8f0;">O2%</th>
+                                <th style="padding: 8px; border: 1px solid #e2e8f0;">Glic.</th>
                                 <th style="padding: 8px; border: 1px solid #e2e8f0;">Peso</th>
                                 <th style="padding: 8px; border: 1px solid #e2e8f0;">Temp.</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${vitals.slice(0, 8).map(v => `
+                            ${vitals.slice(0, 10).map(v => `
                                 <tr>
                                     <td style="padding: 8px; border: 1px solid #e2e8f0; font-weight: bold;">${new Date(v.recorded_at).toLocaleDateString('it-IT')}</td>
                                     <td style="padding: 8px; border: 1px solid #e2e8f0;">${v.systolic_pressure || '-'}/${v.diastolic_pressure || '-'}</td>
                                     <td style="padding: 8px; border: 1px solid #e2e8f0;">${v.heart_rate || '-'}</td>
+                                    <td style="padding: 8px; border: 1px solid #e2e8f0;">${v.oxygen_saturation || '-'}%</td>
                                     <td style="padding: 8px; border: 1px solid #e2e8f0;">${v.blood_sugar || '-'}</td>
-                                    <td style="padding: 8px; border: 1px solid #e2e8f0;">${v.weight || '-'} kg</td>
-                                    <td style="padding: 8px; border: 1px solid #e2e8f0;">${v.temperature || '-'} °C</td>
+                                    <td style="padding: 8px; border: 1px solid #e2e8f0;">${v.weight || '-'}</td>
+                                    <td style="padding: 8px; border: 1px solid #e2e8f0;">${v.temperature || '-'}</td>
                                 </tr>
+                                ${v.notes ? `<tr><td colspan="7" style="padding: 5px 10px; border: 1px solid #e2e8f0; font-size: 9px; color: #64748b; background: #fdfdfd; text-align: left;">Note: ${v.notes}</td></tr>` : ''}
                             `).join('')}
                         </tbody>
                     </table>
