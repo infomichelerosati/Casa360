@@ -24,7 +24,8 @@ const COLOR_MAP = {
     'Scadenza Documento': 'bg-orange-600',
     'Ferie': 'bg-yellow-500',
     'Riposo': 'bg-green-500',
-    'Malattia': 'bg-red-400'
+    'Malattia': 'bg-red-400',
+    'Sport': 'bg-orange-500'
 };
 
 async function initCalendario() {
@@ -96,7 +97,7 @@ async function fetchEvents() {
     const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 2, 0).toISOString();
 
     try {
-        const [eventsRes, vehRes, petsRes, shiftsRes, docsRes, healthProfilesRes, vitalsLogsRes] = await Promise.all([
+        const [eventsRes, vehRes, petsRes, shiftsRes, docsRes, healthProfilesRes, vitalsLogsRes, sportRes] = await Promise.all([
             supabase.from('calendar_events')
                 .select('*')
                 .gte('start_time', firstDay)
@@ -114,7 +115,11 @@ async function fetchEvents() {
                 .gte('expiry_date', getLocalDayStr(new Date(firstDay)))
                 .lte('expiry_date', getLocalDayStr(new Date(lastDay))),
             supabase.from('health_profiles').select('member_id, vitals_reminder_interval, family_members(name)'),
-            supabase.from('health_vitals_logs').select('member_id, recorded_at').order('recorded_at', { ascending: false })
+            supabase.from('health_vitals_logs').select('member_id, recorded_at').order('recorded_at', { ascending: false }),
+            supabase.from('sport_activities')
+                .select('*, family_members(name)')
+                .gte('activity_date', getLocalDayStr(new Date(firstDay)))
+                .lte('activity_date', getLocalDayStr(new Date(lastDay)))
         ]);
 
         if (eventsRes.error) throw eventsRes.error;
@@ -124,6 +129,7 @@ async function fetchEvents() {
         if (docsRes.error) throw docsRes.error;
         if (healthProfilesRes.error) throw healthProfilesRes.error;
         if (vitalsLogsRes.error) throw vitalsLogsRes.error;
+        if (sportRes.error) throw sportRes.error;
 
         let data = eventsRes.data;
 
@@ -234,6 +240,23 @@ async function fetchEvents() {
                         }
                     }
                 }
+            });
+        }
+
+        // Generazione Eventi Virtuali per Sport
+        if (sportRes.data) {
+            sportRes.data.forEach(sa => {
+                const memberName = sa.family_members ? sa.family_members.name : 'Membro';
+                data.push({
+                    id: 's-' + sa.id,
+                    title: `🏀 ${sa.sport_name} (${memberName})`,
+                    start_time: `${sa.activity_date}T${sa.start_time || '08:00:00'}Z`,
+                    end_time: `${sa.activity_date}T${sa.end_time || '09:00:00'}Z`,
+                    event_type: 'Sport',
+                    is_virtual: true,
+                    virtual_type: 'sport',
+                    assigned_to: sa.member_id
+                });
             });
         }
 
@@ -369,6 +392,8 @@ function renderDayEvents() {
                 deleteButton = `<div class="text-xs text-darkblue-icon/50 uppercase font-bold text-center mt-2 flex items-center justify-center gap-1"><i class="fa-solid fa-folder"></i> Archivio</div>`;
             } else if (ev.virtual_type === 'health') {
                 deleteButton = `<div class="text-xs text-darkblue-icon/50 uppercase font-bold text-center mt-2 flex items-center justify-center gap-1"><i class="fa-solid fa-notes-medical"></i> Salute</div>`;
+            } else if (ev.virtual_type === 'sport') {
+                deleteButton = `<div class="text-xs text-darkblue-icon/50 uppercase font-bold text-center mt-2 flex items-center justify-center gap-1"><i class="fa-solid fa-volleyball"></i> Sport</div>`;
             } else {
                 deleteButton = `<div class="text-xs text-darkblue-icon/50 uppercase font-bold text-center mt-2 flex items-center justify-center gap-1"><i class="fa-solid fa-car"></i> Veicoli</div>`;
             }

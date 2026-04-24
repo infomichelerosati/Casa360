@@ -1,0 +1,180 @@
+<!-- modules/sport.html -->
+<header class="flex justify-between items-center w-full mb-6 mt-2">
+    <div>
+        <h1 class="text-3xl font-bold text-darkblue-heading mb-1">Sport & Wellness</h1>
+        <p class="text-sm font-medium opacity-80">Allenamenti e Obiettivi</p>
+    </div>
+    <button id="btn-add-sport"
+        class="clay-card bg-darkblue-card p-3 rounded-2xl text-darkblue-accent flex items-center gap-2 active:scale-95 shadow-lg">
+        <i class="fa-solid fa-plus text-xl"></i>
+        <span class="text-xs font-bold uppercase tracking-wide">Nuovo</span>
+    </button>
+</header>
+
+<!-- Member Selector -->
+<div class="w-full overflow-x-auto scrollbar-hide mb-6 pb-2">
+    <div class="flex gap-4 px-1" id="sport-member-selector">
+        <!-- Generato via JS -->
+    </div>
+</div>
+
+<!-- Contenitore Principale (Nascosto finchè non si seleziona qualcuno) -->
+<div id="sport-content-area" class="hidden flex flex-col gap-6">
+
+    <!-- Sezione: Statistiche Veloci -->
+    <div class="grid grid-cols-2 gap-4">
+        <div class="clay-card bg-darkblue-card rounded-3xl p-4 flex flex-col items-center justify-center text-center">
+            <p class="text-[10px] font-bold text-darkblue-icon uppercase tracking-wider mb-1">Ore questo mese</p>
+            <h3 id="stat-sport-hours" class="text-2xl font-bold text-darkblue-heading">0h</h3>
+        </div>
+        <div class="clay-card bg-darkblue-card rounded-3xl p-4 flex flex-col items-center justify-center text-center">
+            <p class="text-[10px] font-bold text-darkblue-icon uppercase tracking-wider mb-1">Spesa totale</p>
+            <h3 id="stat-sport-cost" class="text-2xl font-bold text-darkblue-heading">0.00€</h3>
+        </div>
+    </div>
+
+    <!-- Breakdown per Sport -->
+    <div id="sport-breakdown-area" class="hidden">
+        <div class="clay-card bg-darkblue-card rounded-3xl p-4">
+            <p class="text-xs font-bold text-darkblue-icon uppercase tracking-wider mb-3 ml-2">Riepilogo per attività</p>
+            <div id="sport-breakdown-list" class="flex flex-col gap-2">
+                <!-- Generato via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Sezione: Prossimi Allenamenti -->
+    <section>
+        <h2 class="text-xl font-bold text-darkblue-heading mb-4">In Programma</h2>
+        <div id="sport-upcoming-list" class="flex flex-col gap-3">
+            <!-- Card via JS -->
+            <div class="text-center py-8 text-darkblue-icon text-sm italic">Nessun allenamento pianificato.</div>
+        </div>
+    </section>
+
+    <!-- Sezione: Storico Attività -->
+    <section>
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold text-darkblue-heading">Storico Recente</h2>
+        </div>
+        <div id="sport-history-list" class="flex flex-col gap-3">
+            <!-- Card via JS -->
+            <div class="text-center py-8 text-darkblue-icon text-sm italic">Nessuna attività registrata.</div>
+        </div>
+    </section>
+
+</div>
+
+<!-- EMPTY STATE -->
+<div id="sport-empty-state" class="flex flex-col items-center justify-center py-20 text-center gap-4">
+    <div class="w-24 h-24 rounded-full bg-darkblue-card flex items-center justify-center text-darkblue-icon opacity-50 shadow-inner">
+        <i class="fa-solid fa-volleyball text-4xl"></i>
+    </div>
+    <div>
+        <h3 class="text-lg font-bold text-darkblue-heading">Chi si allena oggi?</h3>
+        <p class="text-sm text-darkblue-icon mt-1">Seleziona un membro della famiglia per gestire la sua attività sportiva.</p>
+    </div>
+</div>
+
+<!-- ================= MODALS ================= -->
+
+<!-- Modal: Aggiungi/Modifica Attività Sportiva -->
+<div id="modal-sport-activity"
+    class="fixed inset-0 bg-darkblue-base/90 z-[60] flex flex-col justify-end transition-opacity duration-300 opacity-0 pointer-events-none">
+    <div class="clay-card bg-darkblue-card w-full max-w-md mx-auto rounded-t-[2.5rem] p-6 pb-24 transform translate-y-full transition-transform duration-300 h-[90vh] flex flex-col"
+        id="modal-content-sport-activity">
+        <div class="flex justify-between items-center mb-6 shrink-0">
+            <h3 id="sport-modal-title" class="text-xl font-bold text-darkblue-heading">Nuovo Allenamento</h3>
+            <button id="btn-close-sport-modal"
+                class="w-8 h-8 rounded-full flex items-center justify-center text-darkblue-icon hover:text-red-400">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <form id="form-sport-activity" class="flex flex-col gap-4 overflow-y-auto scrollbar-hide pb-10 flex-1">
+            
+            <div class="flex flex-col gap-2">
+                <label class="text-xs font-bold text-darkblue-icon uppercase ml-4">Tipo di Sport</label>
+                <div class="relative">
+                    <input type="text" id="sa-name" list="sport-suggestions" placeholder="es. Beach Tennis, Nuoto, Palestra" required autocomplete="off"
+                        class="clay-input w-full bg-darkblue-base h-12 px-6 rounded-3xl text-darkblue-text placeholder-darkblue-icon/50 focus:outline-none font-bold">
+                    <datalist id="sport-suggestions"></datalist>
+                    <div class="absolute right-4 top-1/2 -translate-y-1/2 text-darkblue-accent opacity-50">
+                        <i class="fa-solid fa-medal"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-darkblue-icon uppercase ml-4">Data</label>
+                    <input type="date" id="sa-date" required
+                        class="clay-input w-full bg-darkblue-base h-12 px-6 rounded-3xl text-darkblue-text focus:outline-none font-bold [color-scheme:dark]">
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-darkblue-icon uppercase ml-4">Luogo</label>
+                    <input type="text" id="sa-location" placeholder="Circolo / Parco" autocomplete="off"
+                        class="clay-input w-full bg-darkblue-base h-12 px-6 rounded-3xl text-darkblue-text focus:outline-none">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-darkblue-icon uppercase ml-4">Ora Inizio</label>
+                    <input type="time" id="sa-start" required
+                        class="clay-input w-full bg-darkblue-base h-12 px-6 rounded-3xl text-darkblue-text focus:outline-none font-bold [color-scheme:dark]">
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-darkblue-icon uppercase ml-4">Ora Fine</label>
+                    <input type="time" id="sa-end" required
+                        class="clay-input w-full bg-darkblue-base h-12 px-6 rounded-3xl text-darkblue-text focus:outline-none font-bold [color-scheme:dark]">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-darkblue-icon uppercase ml-4">Tariffa Oraria (€/h)</label>
+                    <input type="number" id="sa-hourly-rate" step="0.5" placeholder="es. 10"
+                        class="clay-input w-full bg-darkblue-base h-12 px-6 rounded-3xl text-darkblue-text focus:outline-none font-bold">
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-darkblue-icon uppercase ml-4 text-darkblue-accent">Costo Totale (€)</label>
+                    <input type="number" id="sa-cost" step="0.1" placeholder="Calcolato o Fisso"
+                        class="clay-input w-full bg-darkblue-base h-12 px-6 rounded-3xl text-darkblue-text focus:outline-none font-bold border-2 border-darkblue-accent/20">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-darkblue-icon uppercase ml-4">Intensità (1-10)</label>
+                    <input type="range" id="sa-intensity" min="1" max="10" step="1" value="5"
+                        class="w-full h-6 accent-darkblue-accent">
+                    <div class="flex justify-between px-2 text-[10px] text-darkblue-icon font-bold uppercase">
+                        <span>Leggera</span>
+                        <span>Massima</span>
+                    </div>
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-darkblue-icon uppercase ml-4">Calorie Bruciate</label>
+                    <input type="number" id="sa-calories" placeholder="kcal"
+                        class="clay-input w-full bg-darkblue-base h-12 px-6 rounded-3xl text-darkblue-text focus:outline-none">
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label class="text-xs font-bold text-darkblue-icon uppercase ml-4">Note / Compagni di gioco</label>
+                <textarea id="sa-notes" placeholder="es. Giocato con Michele, campo outdoor..." rows="2"
+                    class="clay-input w-full bg-darkblue-base p-4 rounded-3xl text-darkblue-text placeholder-darkblue-icon/50 focus:outline-none resize-none"></textarea>
+            </div>
+
+            <div class="flex items-center gap-3 ml-4 mt-2">
+                <input type="checkbox" id="sa-completed" class="w-5 h-5 accent-green-500">
+                <label for="sa-completed" class="text-sm font-bold text-darkblue-heading">Attività già completata</label>
+            </div>
+
+            <button type="submit"
+                class="clay-btn-primary w-full h-14 rounded-3xl font-bold text-white mt-6 flex items-center justify-center gap-2 active:scale-95 shrink-0 shadow-lg">
+                <i class="fa-solid fa-check"></i> Salva Attività
+            </button>
+        </form>
+    </div>
+</div>

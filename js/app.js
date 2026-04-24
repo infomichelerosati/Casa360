@@ -224,8 +224,14 @@ function initModuleLogic(moduleName) {
             }
             break;
         case 'salute':
-            if (typeof initSalute === 'function') {
-                initSalute();
+            if (typeof initSalute === 'function') initSalute();
+            break;
+        case 'sport':
+            if (typeof initSport === 'function') initSport();
+            break;
+        case 'famiglia':
+            if (typeof initFamiglia === 'function') {
+                initFamiglia();
             }
             break;
         case 'animali':
