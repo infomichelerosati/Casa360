@@ -328,6 +328,13 @@ window.updateNotificationBadges = async function () {
         if (!familyId) return;
 
         let notifications = [];
+        const dismissedAlerts = JSON.parse(localStorage.getItem('family_os_dismissed_alerts') || '{}');
+        const now = Date.now();
+
+        const isDismissed = (id) => {
+            if (dismissedAlerts[id] && (now - dismissedAlerts[id]) < 24 * 60 * 60 * 1000) return true;
+            return false;
+        };
 
         // 1. Spesa Urgente (da comprare)
         const { data: spesaUrgent, error: errSpesa } = await supabase
@@ -371,7 +378,211 @@ window.updateNotificationBadges = async function () {
             });
         }
 
-        window.globalNotifications = notifications;
+        // 3. Sport Oggi
+        const { data: sportOggi, error: errSport } = await supabase
+            .from('sport_activities')
+            .select('*, family_members(name)')
+            .eq('family_id', familyId)
+            .eq('activity_date', todayLocal)
+            .eq('is_completed', false);
+
+        if (!errSport && sportOggi && sportOggi.length > 0) {
+            sportOggi.forEach(s => {
+                notifications.push({
+                    type: 'sport',
+                    title: 'Allenamento Oggi',
+                    msg: `${s.sport_name} (${s.family_members?.name || 'Tu'})`,
+                    icon: 'fa-volleyball',
+                    color: 'text-orange-500 bg-orange-500/10 border-orange-500/20'
+                });
+            });
+        }
+
+        // 4. Scadenze Salute (Parametri Vitali)
+        // Recuperiamo i profili con intervallo > 0 e l'ultimo log per ognuno
+        const { data: hProfiles } = await supabase.from('health_profiles').select('member_id, vitals_reminder_interval, family_members(name)').gt('vitals_reminder_interval', 0);
+        if (hProfiles) {
+            for (const p of hProfiles) {
+                const { data: lastLog } = await supabase.from('health_vitals_logs').select('recorded_at').eq('member_id', p.member_id).order('recorded_at', { ascending: false }).limit(1).single();
+                
+                let isDue = false;
+                if (!lastLog) {
+                    isDue = true;
+                } else {
+                    const lastDate = new Date(lastLog.recorded_at);
+                    const diffDays = Math.floor((new Date() - lastDate) / (1000 * 60 * 60 * 24));
+                    if (diffDays >= p.vitals_reminder_interval) isDue = true;
+                }
+
+                if (isDue) {
+                    notifications.push({
+                        type: 'salute',
+                        title: 'Controllo Salute',
+                        msg: `Misurazione parametri per ${p.family_members?.name}`,
+                        icon: 'fa-heart-pulse',
+                        color: 'text-red-500 bg-red-500/10 border-red-500/20'
+                    });
+                }
+            }
+        }
+
+        // 5. Animali (Promemoria oggi)
+        const { data: petRem } = await supabase.from('pet_reminders').select('*, family_pets(name)').eq('reminder_date', todayLocal).eq('is_done', false);
+        if (petRem) {
+            petRem.forEach(r => {
+                notifications.push({
+                    type: 'animali',
+                    title: 'Promemoria Pet',
+                    msg: `${r.title} (${r.family_pets?.name})`,
+                    icon: 'fa-paw',
+                    color: 'text-amber-500 bg-amber-500/10 border-amber-500/20'
+                });
+            });
+        }
+
+
+        // 6. Scadenze Documenti (entro oggi)
+        const { data: docsRem } = await supabase.from('family_documents').select('*, family_members(name)').lte('expiry_date', todayLocal);
+        if (docsRem) {
+            docsRem.forEach(d => {
+                notifications.push({
+                    id: 'doc-' + d.id,
+                    type: 'documenti',
+                    title: 'Documento Scaduto/in Scadenza',
+                    msg: `${d.title} (${d.family_members?.name})`,
+                    icon: 'fa-folder-open',
+                    color: 'text-red-500 bg-red-500/10 border-red-500/20'
+                });
+            });
+        }
+
+        // --- SUGGERIMENTI PROATTIVI (AI FAMILY INSIGHTS) ---
+
+        // 7. Insight Finanze (Se non ci sono spese da 4 giorni)
+        const fourDaysAgo = new Date(now - 4 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const { data: lastExp } = await supabase.from('family_expenses').select('date').eq('family_id', familyId).order('date', { ascending: false }).limit(1).single();
+        if ((!lastExp || lastExp.date < fourDaysAgo) && !isDismissed('insight-finanze')) {
+            notifications.push({
+                id: 'insight-finanze',
+                type: 'finanze',
+                title: '💡 Risparmio & Gestione',
+                msg: 'Non vedo nuove spese registrate ultimamente. Hai qualche scontrino da inserire?',
+                icon: 'fa-lightbulb',
+                color: 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20',
+                isSuggestion: true
+            });
+        }
+
+        // 8. Insight Animali (Cibo/Lettiera - Se sono passati 15 giorni dall'ultimo acquisto)
+        const fifteenDaysAgo = new Date(now - 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        // Nota: Qui andrebbe cercato nello storico delle spese o della lista spesa se mantenuto. 
+        // Facciamo una query simbolica sulla shopping_list (supponendo che gli item "bought" restino per un po')
+        const { data: lastPetSupply } = await supabase.from('shopping_list')
+            .select('updated_at')
+            .eq('family_id', familyId)
+            .eq('is_bought', true)
+            .ilike('item_name', '%cibo%')
+            .order('updated_at', { ascending: false })
+            .limit(1).single();
+            
+        if ((!lastPetSupply || lastPetSupply.updated_at < fifteenDaysAgo) && !isDismissed('insight-pet-food')) {
+            // Verifica se hanno pet
+            const { count: petCount } = await supabase.from('family_pets').select('*', { count: 'exact', head: true }).eq('family_id', familyId);
+            if (petCount > 0) {
+                notifications.push({
+                    id: 'insight-pet-food',
+                    type: 'spesa',
+                    title: '💡 Scorte Animali',
+                    msg: 'È passato un po\' di tempo dall\'ultimo acquisto di cibo. Te ne serve ancora?',
+                    icon: 'fa-paw',
+                    color: 'text-amber-400 bg-amber-400/10 border-amber-400/20',
+                    isSuggestion: true
+                });
+            }
+        }
+
+        // 9. Insight Sport/Meteo
+        if (window.currentWeatherDesc && !isDismissed('insight-meteo')) {
+            const isBadWeather = window.currentWeatherDesc.includes('Pioggia') || window.currentWeatherDesc.includes('Temporale') || window.currentWeatherDesc.includes('Neve');
+            const isGoodWeather = window.currentWeatherDesc.includes('Sereno') || window.currentWeatherDesc.includes('sole');
+
+            if (isGoodWeather) {
+                const twoDaysAgo = new Date(now - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+                const { data: lastSport } = await supabase.from('sport_activities').select('activity_date').eq('family_id', familyId).order('activity_date', { ascending: false }).limit(1).single();
+                if (!lastSport || lastSport.activity_date < twoDaysAgo) {
+                    notifications.push({
+                        id: 'insight-meteo',
+                        type: 'sport',
+                        title: '💡 Benessere & Sole',
+                        msg: 'C\'è un bel sole oggi! Ti va di registrare un allenamento all\'aperto?',
+                        icon: 'fa-sun',
+                        color: 'text-cyan-400 bg-cyan-400/10 border-cyan-400/20',
+                        isSuggestion: true
+                    });
+                }
+            } else if (isBadWeather) {
+                // Suggerimento Pasti o Archivio se piove
+                const rand = Math.random();
+                if (rand > 0.5) {
+                    notifications.push({
+                        id: 'insight-meteo',
+                        type: 'pasti',
+                        title: '💡 Comfort Food',
+                        msg: 'Fuori piove... il tempo perfetto per spadellare! Cerchiamo una ricetta?',
+                        icon: 'fa-utensils',
+                        color: 'text-orange-400 bg-orange-400/10 border-orange-400/20',
+                        isSuggestion: true
+                    });
+                } else {
+                    notifications.push({
+                        id: 'insight-meteo',
+                        type: 'documenti',
+                        title: '💡 Organizzazione',
+                        msg: 'Giornata uggiosa? L\'ideale per mettere ordine nell\'Archivio Documenti!',
+                        icon: 'fa-folder-open',
+                        color: 'text-indigo-400 bg-indigo-400/10 border-indigo-400/20',
+                        isSuggestion: true
+                    });
+                }
+            }
+        }
+
+        // 10. Insight Bambini (Se ci sono bambini e piove)
+        if (window.currentWeatherDesc && (window.currentWeatherDesc.includes('Pioggia') || window.currentWeatherDesc.includes('Temporale')) && !isDismissed('insight-bambini')) {
+            const { count: childCount } = await supabase.from('family_members').select('*', { count: 'exact', head: true }).eq('family_id', familyId).eq('role', 'child');
+            if (childCount > 0) {
+                notifications.push({
+                    id: 'insight-bambini',
+                    type: 'bambini',
+                    title: '💡 Giochi in Casa',
+                    msg: 'Fuori non si esce... tempo di qualità in casa! Controlla il diario dei piccoli.',
+                    icon: 'fa-shapes',
+                    color: 'text-pink-400 bg-pink-400/10 border-pink-400/20',
+                    isSuggestion: true
+                });
+            }
+        }
+
+        // 11. Insight Veicoli (Controllo ogni 30 giorni di inattività modulo)
+        if (!isDismissed('insight-veicoli')) {
+             // Semplificato: se non ci sono scadenze urgenti e sono passati 30gg...
+             // Per brevità facciamo un check randomico o basato su ultimo login se avessimo il dato.
+             // Usiamo un check di "presenza veicoli"
+             const { count: vehCount } = await supabase.from('family_vehicles').select('*', { count: 'exact', head: true }).eq('family_id', familyId);
+             if (vehCount > 0 && Math.random() > 0.95) { // Molto raro per non tediare
+                notifications.push({
+                    id: 'insight-veicoli',
+                    type: 'veicoli',
+                    title: '💡 Manutenzione',
+                    msg: 'Hai controllato i livelli e le scadenze dei veicoli ultimamente?',
+                    icon: 'fa-car',
+                    color: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
+                    isSuggestion: true
+                });
+             }
+        }
+
+        window.globalNotifications = notifications.filter(n => !isDismissed(n.id || n.title));
 
         // AGGIORNAMENTO UI:
         const spesaBadge = document.getElementById('nav-badge-spesa');
@@ -386,10 +597,30 @@ window.updateNotificationBadges = async function () {
         }
 
         const bellBadge = document.getElementById('dash-badge-bell');
-        if (bellBadge) {
-            // Se c'è ALMENO UNA notifica di qualsiasi tipo, "suona" la campanella
-            if (notifications.length > 0) {
+        const bellNum = document.getElementById('dash-badge-bell-num');
+        
+        if (bellBadge && bellNum) {
+            const count = notifications.length;
+            if (count > 0) {
+                bellNum.textContent = count;
                 bellBadge.classList.remove('hidden');
+                
+                // Determina il colore e l'importanza
+                const hasCritical = notifications.some(n => ['spesa', 'documenti', 'salute'].includes(n.type));
+                const hasSportsOrPets = notifications.some(n => ['sport', 'animali'].includes(n.type));
+                
+                // Rimuovi classi precedenti
+                bellBadge.classList.remove('bg-red-500', 'bg-yellow-500', 'bg-blue-500', 'animate-pulse');
+                
+                if (hasCritical) {
+                    bellBadge.classList.add('bg-red-500', 'animate-pulse');
+                } else if (hasSportsOrPets) {
+                    bellBadge.classList.add('bg-orange-500');
+                } else if (notifications.some(n => n.isSuggestion)) {
+                    bellBadge.classList.add('bg-yellow-500');
+                } else {
+                    bellBadge.classList.add('bg-blue-500');
+                }
             } else {
                 bellBadge.classList.add('hidden');
             }
@@ -417,20 +648,36 @@ window.renderNotificationsList = function () {
 
     listContainer.innerHTML = '';
     window.globalNotifications.forEach(notif => {
+        const id = notif.id || notif.title;
         const html = `
-            <div class="clay-card border ${notif.color.split(' ')[2]} rounded-2xl p-4 flex items-center gap-4 cursor-pointer hover:brightness-110 active:scale-95 transition-all"
-                 onclick="closeNotificationsPanel(); setTimeout(() => navigateApp('${notif.type}'), 200)">
-                <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-inner ${notif.color.replace(/border-[\w-\/]+/, '')}">
-                    <i class="fa-solid ${notif.icon}"></i>
+            <div class="relative group">
+                <div class="clay-card border ${notif.color.split(' ')[2]} rounded-2xl p-4 flex items-center gap-4 cursor-pointer hover:brightness-110 active:scale-95 transition-all"
+                     onclick="closeNotificationsPanel(); setTimeout(() => navigateApp('${notif.type}'), 200)">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-inner ${notif.color.replace(/border-[\w-\/]+/, '')}">
+                        <i class="fa-solid ${notif.icon}"></i>
+                    </div>
+                    <div class="flex-1 pr-6">
+                         <p class="text-[10px] font-bold uppercase tracking-widest text-darkblue-icon">${notif.title}</p>
+                         <p class="text-white font-medium break-words text-sm leading-tight">${notif.msg}</p>
+                    </div>
                 </div>
-                <div>
-                     <p class="text-[10px] font-bold uppercase tracking-widest text-darkblue-icon">${notif.title}</p>
-                     <p class="text-white font-medium break-words">${notif.msg}</p>
-                </div>
+                <button onclick="event.stopPropagation(); window.dismissNotification('${id}')" 
+                        class="absolute top-3 right-3 w-7 h-7 rounded-full bg-darkblue-base/50 text-darkblue-icon flex items-center justify-center hover:bg-red-500/20 hover:text-red-400 transition-all opacity-0 group-hover:opacity-100">
+                    <i class="fa-solid fa-xmark text-xs"></i>
+                </button>
             </div>
         `;
         listContainer.insertAdjacentHTML('beforeend', html);
     });
+};
+
+window.dismissNotification = function(id) {
+    const dismissedAlerts = JSON.parse(localStorage.getItem('family_os_dismissed_alerts') || '{}');
+    dismissedAlerts[id] = Date.now();
+    localStorage.setItem('family_os_dismissed_alerts', JSON.stringify(dismissedAlerts));
+    
+    // Refresh UI
+    window.updateNotificationBadges();
 };
 
 window.openNotificationsPanel = function () {

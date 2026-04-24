@@ -671,6 +671,7 @@ window.fetchWeather = async function () {
 
                 tempEl.textContent = `${temp}°`;
                 descEl.textContent = wInfo.desc;
+                window.currentWeatherDesc = wInfo.desc;
                 iconEl.className = `fa-solid ${wInfo.icon} text-4xl ${wInfo.color} mb-2 drop-shadow-md`;
 
                 if (cityEl && cityNameLabel) {
