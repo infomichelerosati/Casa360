@@ -3,6 +3,9 @@
 let sltFamilyMembers = [];
 let sltCurrentMemberId = null;
 let sltCurrentHealthProfileId = null;
+let sltVitalsHistory = [];
+let sltCurrentVitalsIndex = 0;
+let sltCharts = {}; // Riferimento per distruggere i grafici Chart.js esistenti
 
 async function initSalute() {
     console.log("Inizializzazione Modulo Salute...");
@@ -284,52 +287,75 @@ async function loadHealthVitals(memberId) {
             .select('*')
             .eq('member_id', memberId)
             .order('recorded_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
+            .limit(20);
 
         if (error) throw error;
 
-        const display = document.getElementById('health-vitals-display');
-        const lastUpdate = document.getElementById('vitals-last-update');
-        display.innerHTML = '';
-        lastUpdate.textContent = '';
-
-        if (!data) {
-            display.innerHTML = '<div class="text-center py-4 col-span-2 text-darkblue-icon text-sm italic">Nessuna misurazione recente.</div>';
-            return;
-        }
-
-        const dateObj = new Date(data.recorded_at);
-        const dateStr = dateObj.toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-        lastUpdate.textContent = `Ultimo aggiornamento: ${dateStr}`;
-
-        const items = [
-            { label: 'Pressione', value: data.systolic_pressure && data.diastolic_pressure ? `${data.systolic_pressure}/${data.diastolic_pressure}` : '--', unit: 'mmHg', icon: 'fa-heart-pulse', color: 'text-red-400' },
-            { label: 'Battiti', value: data.heart_rate || '--', unit: 'BPM', icon: 'fa-wave-square', color: 'text-blue-400' },
-            { label: 'Saturaz.', value: data.oxygen_saturation || '--', unit: '%', icon: 'fa-lungs', color: 'text-cyan-400' },
-            { label: 'Glicemia', value: data.blood_sugar || '--', unit: 'mg/dL', icon: 'fa-droplet', color: 'text-amber-500' },
-            { label: 'Peso', value: data.weight || '--', unit: 'kg', icon: 'fa-weight-scale', color: 'text-purple-400' },
-            { label: 'Temp.', value: data.temperature || '--', unit: '°C', icon: 'fa-thermometer-half', color: 'text-emerald-400' }
-        ];
-
-        items.forEach(item => {
-            const el = document.createElement('div');
-            el.className = 'flex flex-col gap-1 p-3 rounded-2xl bg-darkblue-base/30 border border-darkblue-base/50';
-            el.innerHTML = `
-                <div class="flex items-center gap-2 opacity-70">
-                    <i class="fa-solid ${item.icon} text-xs ${item.color}"></i>
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-darkblue-icon">${item.label}</span>
-                </div>
-                <div class="flex items-baseline gap-1">
-                    <span class="text-lg font-bold text-darkblue-heading">${item.value}</span>
-                    <span class="text-[9px] font-medium text-darkblue-icon">${item.unit}</span>
-                </div>
-            `;
-            display.appendChild(el);
-        });
-
+        sltVitalsHistory = data || [];
+        sltCurrentVitalsIndex = 0;
+        renderCurrentVitals();
     } catch (err) {
         console.error("Error vitals", err);
+    }
+}
+
+function renderCurrentVitals() {
+    const display = document.getElementById('health-vitals-display');
+    const lastUpdate = document.getElementById('vitals-last-update');
+    const btnPrev = document.getElementById('btn-prev-vitals');
+    const btnNext = document.getElementById('btn-next-vitals');
+
+    display.innerHTML = '';
+    lastUpdate.textContent = '';
+
+    if (sltVitalsHistory.length === 0) {
+        display.innerHTML = '<div class="text-center py-4 col-span-2 text-darkblue-icon text-sm italic">Nessuna misurazione recente.</div>';
+        btnPrev.disabled = true;
+        btnNext.disabled = true;
+        return;
+    }
+
+    const data = sltVitalsHistory[sltCurrentVitalsIndex];
+    const dateObj = new Date(data.recorded_at);
+    const dateStr = dateObj.toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    
+    lastUpdate.textContent = `(${sltCurrentVitalsIndex + 1}/${sltVitalsHistory.length}) ${dateStr}`;
+
+    // Update buttons
+    btnPrev.disabled = sltCurrentVitalsIndex >= sltVitalsHistory.length - 1;
+    btnNext.disabled = sltCurrentVitalsIndex <= 0;
+
+    const items = [
+        { label: 'Pressione', value: data.systolic_pressure && data.diastolic_pressure ? `${data.systolic_pressure}/${data.diastolic_pressure}` : '--', unit: 'mmHg', icon: 'fa-heart-pulse', color: 'text-red-400' },
+        { label: 'Battiti', value: data.heart_rate || '--', unit: 'BPM', icon: 'fa-wave-square', color: 'text-blue-400' },
+        { label: 'Saturaz.', value: data.oxygen_saturation || '--', unit: '%', icon: 'fa-lungs', color: 'text-cyan-400' },
+        { label: 'Glicemia', value: data.blood_sugar || '--', unit: 'mg/dL', icon: 'fa-droplet', color: 'text-amber-500' },
+        { label: 'Peso', value: data.weight || '--', unit: 'kg', icon: 'fa-weight-scale', color: 'text-purple-400' },
+        { label: 'Temp.', value: data.temperature || '--', unit: '°C', icon: 'fa-thermometer-half', color: 'text-emerald-400' }
+    ];
+
+    items.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'flex flex-col gap-1 p-3 rounded-2xl bg-darkblue-base/30 border border-darkblue-base/50';
+        el.innerHTML = `
+            <div class="flex items-center gap-2 opacity-70">
+                <i class="fa-solid ${item.icon} text-xs ${item.color}"></i>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-darkblue-icon">${item.label}</span>
+            </div>
+            <div class="flex items-baseline gap-1">
+                <span class="text-lg font-bold text-darkblue-heading">${item.value}</span>
+                <span class="text-[9px] font-medium text-darkblue-icon">${item.unit}</span>
+            </div>
+        `;
+        display.appendChild(el);
+    });
+
+    // Se ci sono note, aggiungiamole sotto
+    if (data.notes) {
+        const notesEl = document.createElement('div');
+        notesEl.className = 'col-span-2 mt-2 p-3 bg-darkblue-base/20 rounded-xl border border-dashed border-darkblue-icon/30 text-[10px] text-darkblue-icon italic';
+        notesEl.innerHTML = `<i class="fa-solid fa-note-sticky mr-1"></i> ${data.notes}`;
+        display.appendChild(notesEl);
     }
 }
 
@@ -560,6 +586,116 @@ function setupSaluteModals() {
             alert("Errore durante il salvataggio dei parametri.");
         }
     });
+
+    // 5. Navigation Buttons
+    document.getElementById('btn-prev-vitals')?.addEventListener('click', () => {
+        if (sltCurrentVitalsIndex < sltVitalsHistory.length - 1) {
+            sltCurrentVitalsIndex++;
+            renderCurrentVitals();
+        }
+    });
+    document.getElementById('btn-next-vitals')?.addEventListener('click', () => {
+        if (sltCurrentVitalsIndex > 0) {
+            sltCurrentVitalsIndex--;
+            renderCurrentVitals();
+        }
+    });
+
+    // 6. Modal Charts
+    const modCharts = document.getElementById('modal-health-charts');
+    const modChartsContent = document.getElementById('modal-content-health-charts');
+
+    document.getElementById('btn-show-vitals-charts')?.addEventListener('click', () => {
+        modCharts.classList.remove('opacity-0', 'pointer-events-none');
+        modChartsContent.classList.remove('translate-y-full');
+        renderHealthCharts();
+    });
+
+    const closeChartsModal = () => {
+        modCharts.classList.add('opacity-0', 'pointer-events-none');
+        modChartsContent.classList.add('translate-y-full');
+    };
+    document.getElementById('btn-close-h-charts').addEventListener('click', closeChartsModal);
+    modCharts.addEventListener('click', (e) => { if (e.target === modCharts) closeChartsModal(); });
+}
+
+async function renderHealthCharts() {
+    if (!sltCurrentMemberId) return;
+
+    try {
+        // Fetch last 30 for better trends
+        const { data, error } = await supabase
+            .from('health_vitals_logs')
+            .select('*')
+            .eq('member_id', sltCurrentMemberId)
+            .order('recorded_at', { ascending: true }) // Ascending for charts (left to right)
+            .limit(30);
+
+        if (error) throw error;
+        if (!data || data.length === 0) return;
+
+        const labels = data.map(v => new Date(v.recorded_at).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' }));
+
+        // Destroy previous charts if they exist
+        Object.values(sltCharts).forEach(c => c.destroy());
+        sltCharts = {};
+
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: true, labels: { color: '#8a9ab4', font: { size: 10 } } } },
+            scales: {
+                x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 8 } } },
+                y: { grid: { color: '#222d41' }, ticks: { color: '#64748b', font: { size: 8 } } }
+            }
+        };
+
+        // 1. Pressione
+        sltCharts.pressure = new Chart(document.getElementById('chart-pressure'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'Sistolica', data: data.map(v => v.systolic_pressure), borderColor: '#f87171', backgroundColor: '#f8717122', tension: 0.3, fill: true },
+                    { label: 'Diastolica', data: data.map(v => v.diastolic_pressure), borderColor: '#ef4444', backgroundColor: '#ef444422', tension: 0.3, fill: true }
+                ]
+            },
+            options: chartOptions
+        });
+
+        // 2. Battiti & Saturazione
+        sltCharts.vitals = new Chart(document.getElementById('chart-vitals'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'BPM', data: data.map(v => v.heart_rate), borderColor: '#60a5fa', tension: 0.3, yAxisID: 'y' },
+                    { label: 'O2 %', data: data.map(v => v.oxygen_saturation), borderColor: '#22d3ee', tension: 0.3, yAxisID: 'y1' }
+                ]
+            },
+            options: {
+                ...chartOptions,
+                scales: {
+                    ...chartOptions.scales,
+                    y: { position: 'left', title: { display: true, text: 'BPM', color: '#64748b', font: { size: 8 } } },
+                    y1: { position: 'right', grid: { display: false }, title: { display: true, text: 'SpO2%', color: '#64748b', font: { size: 8 } } }
+                }
+            }
+        });
+
+        // 3. Peso
+        sltCharts.weight = new Chart(document.getElementById('chart-weight'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{ label: 'Peso (kg)', data: data.map(v => v.weight), borderColor: '#c084fc', backgroundColor: '#c084fc22', tension: 0.3, fill: true }]
+            },
+            options: chartOptions
+        });
+
+    } catch (err) {
+        console.error("Error rendering charts", err);
+    }
 }
 
 async function exportHealthReport() {

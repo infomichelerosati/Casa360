@@ -62,16 +62,33 @@
     <section>
         <div class="flex justify-between items-end mb-4">
             <h2 class="text-xl font-bold text-darkblue-heading">Parametri Vitali</h2>
-            <button id="btn-add-vitals"
-                class="w-10 h-10 clay-btn-primary rounded-full flex items-center justify-center text-white active:scale-95"><i
-                    class="fa-solid fa-plus"></i></button>
+            <div class="flex gap-2">
+                <button id="btn-show-vitals-charts"
+                    class="w-10 h-10 clay-btn bg-darkblue-card rounded-full flex items-center justify-center text-darkblue-accent active:scale-95 shadow-md">
+                    <i class="fa-solid fa-chart-line"></i>
+                </button>
+                <button id="btn-add-vitals"
+                    class="w-10 h-10 clay-btn-primary rounded-full flex items-center justify-center text-white active:scale-95 shadow-md">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+            </div>
         </div>
         <div class="clay-card bg-darkblue-card rounded-[2rem] p-6 relative overflow-hidden">
             <div id="health-vitals-display" class="grid grid-cols-2 gap-4">
                 <!-- Dati generati via JS -->
                 <div class="text-center py-4 col-span-2 text-darkblue-icon text-sm italic">Nessuna misurazione recente.</div>
             </div>
-            <div id="vitals-last-update" class="mt-4 text-[10px] text-darkblue-icon/60 text-right font-medium"></div>
+            <div class="mt-4 flex justify-between items-center">
+                <div class="flex gap-2">
+                    <button id="btn-prev-vitals" class="w-8 h-8 rounded-full bg-darkblue-base/50 text-darkblue-icon flex items-center justify-center disabled:opacity-20 active:scale-90 transition-all">
+                        <i class="fa-solid fa-chevron-left text-xs"></i>
+                    </button>
+                    <button id="btn-next-vitals" class="w-8 h-8 rounded-full bg-darkblue-base/50 text-darkblue-icon flex items-center justify-center disabled:opacity-20 active:scale-90 transition-all">
+                        <i class="fa-solid fa-chevron-right text-xs"></i>
+                    </button>
+                </div>
+                <div id="vitals-last-update" class="text-[10px] text-darkblue-icon/60 font-medium italic"></div>
+            </div>
         </div>
     </section>
 
@@ -326,5 +343,44 @@
                 <i class="fa-solid fa-check"></i> Salva Misurazioni
             </button>
         </form>
+    </div>
+</div>
+
+<!-- Modal: Grafici Andamento -->
+<div id="modal-health-charts"
+    class="fixed inset-0 bg-darkblue-base/90 z-[60] flex flex-col justify-end transition-opacity duration-300 opacity-0 pointer-events-none">
+    <div class="clay-card bg-darkblue-card w-full max-w-md mx-auto rounded-t-[2.5rem] p-6 pb-24 transform translate-y-full transition-transform duration-300 h-[85vh] flex flex-col"
+        id="modal-content-health-charts">
+        <div class="flex justify-between items-center mb-6 shrink-0">
+            <h3 class="text-xl font-bold text-darkblue-heading">Andamento Parametri</h3>
+            <button id="btn-close-h-charts"
+                class="w-8 h-8 rounded-full flex items-center justify-center text-darkblue-icon hover:text-red-400">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto scrollbar-hide space-y-8 pb-10">
+            <!-- Grafico Pressione -->
+            <div>
+                <p class="text-xs font-bold text-darkblue-icon uppercase ml-2 mb-2">Pressione Arteriosa</p>
+                <div class="bg-darkblue-base/30 rounded-2xl p-2 border border-darkblue-base/50">
+                    <canvas id="chart-pressure" height="200"></canvas>
+                </div>
+            </div>
+            <!-- Grafico Cuore & Saturazione -->
+            <div>
+                <p class="text-xs font-bold text-darkblue-icon uppercase ml-2 mb-2">Battiti & Saturazione</p>
+                <div class="bg-darkblue-base/30 rounded-2xl p-2 border border-darkblue-base/50">
+                    <canvas id="chart-vitals" height="200"></canvas>
+                </div>
+            </div>
+            <!-- Grafico Peso -->
+            <div>
+                <p class="text-xs font-bold text-darkblue-icon uppercase ml-2 mb-2">Peso Corporeo</p>
+                <div class="bg-darkblue-base/30 rounded-2xl p-2 border border-darkblue-base/50">
+                    <canvas id="chart-weight" height="150"></canvas>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
