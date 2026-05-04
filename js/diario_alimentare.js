@@ -484,7 +484,24 @@ window.diarioAlimentareModule = (function() {
                         <div style="padding-left: 10px;">
                             <div style="display: flex; gap: 20px; margin-bottom: 10px;">
                                 <p style="font-size: 12px; color: #3b82f6; font-weight: bold; margin: 0;">💧 Acqua: ${dayData.water} bicchieri (${(dayData.water * 0.25).toFixed(1)}L)</p>
-                                ${dayData.sport.length > 0 ? `<p style="font-size: 12px; color: #f97316; font-weight: bold; margin: 0;">🏃 Sport: ${dayData.sport.map(s => s.sport_name).join(', ')}</p>` : ''}
+                                ${dayData.sport.length > 0 ? `
+                                    <p style="font-size: 12px; color: #f97316; font-weight: bold; margin: 0;">
+                                        🏃 Sport: ${dayData.sport.map(s => {
+                                            let details = s.sport_name;
+                                            if (s.start_time && s.end_time) {
+                                                const start = new Date(`2000-01-01T${s.start_time}`);
+                                                const end = new Date(`2000-01-01T${s.end_time}`);
+                                                const diff = (end - start) / (1000 * 60);
+                                                if (diff > 0) {
+                                                    const h = Math.floor(diff / 60);
+                                                    const m = Math.floor(diff % 60);
+                                                    details += ` (${h > 0 ? h + 'h ' : ''}${m}m)`;
+                                                }
+                                            }
+                                            if (s.calories) details += ` - ${s.calories} kcal`;
+                                            return details;
+                                        }).join(', ')}
+                                    </p>` : ''}
                             </div>
                             <table style="width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed;">
                                 <thead>
