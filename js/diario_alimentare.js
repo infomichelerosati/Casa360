@@ -46,8 +46,13 @@ window.diarioAlimentareModule = (function() {
         
         updateDateDisplay();
         
-        // Se c'è un membro preferito salvato o seleziona il primo
-        if (members.length > 0) {
+        // Seleziona il membro corrente (utente loggato) di default
+        const { data: { user } } = await window.supabase.auth.getUser();
+        const currentMember = members.find(m => m.id === user.id);
+        
+        if (currentMember) {
+            selectMember(currentMember.id);
+        } else if (members.length > 0) {
             selectMember(members[0].id);
         }
 
