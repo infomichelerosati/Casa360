@@ -1382,3 +1382,36 @@ window.fetchFoodDiary = async function() {
     }
 };
 
+window.addDashWater = async function() {
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const familyId = await window.getUserFamilyId();
+        const todayStr = new Date().toISOString().split('T')[0];
+
+        const { error } = await supabase
+            .from('food_diary_water')
+            .insert([{
+                family_id: familyId,
+                member_id: user.id,
+                entry_date: todayStr,
+                glasses: 1
+            }]);
+
+        if (error) throw error;
+        
+        // Refresh local counter for better UX
+        const waterValEl = document.getElementById('dash-water-val');
+        if (waterValEl) {
+            waterValEl.textContent = parseInt(waterValEl.textContent) + 1;
+        }
+
+        window.showToast("Bicchiere d'acqua registrato! 💧", "success");
+
+    } catch (err) {
+        console.error("Errore addDashWater", err);
+        window.showToast("Errore registrazione acqua", "error");
+    }
+};
+

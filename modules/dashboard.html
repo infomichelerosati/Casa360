@@ -225,10 +225,16 @@
                     <div class="w-10 h-10 rounded-full bg-darkblue-base text-emerald-500 flex items-center justify-center shadow-inner">
                         <i class="fa-solid fa-apple-whole"></i>
                     </div>
-                    <div class="flex items-center gap-1.5 bg-darkblue-base/50 px-2 py-1 rounded-full border border-darkblue-card">
-                        <i class="fa-solid fa-droplet text-blue-400 text-[10px]"></i>
-                        <span id="dash-water-val" class="text-[10px] font-bold text-white">0</span>
-                        <span class="text-[8px] text-darkblue-icon font-bold">/8</span>
+                    <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-1.5 bg-darkblue-base/50 px-2 py-1 rounded-full border border-darkblue-card">
+                            <i class="fa-solid fa-droplet text-blue-400 text-[10px]"></i>
+                            <span id="dash-water-val" class="text-[10px] font-bold text-white">0</span>
+                            <span class="text-[8px] text-darkblue-icon font-bold">/8</span>
+                        </div>
+                        <button onclick="event.stopPropagation(); if(!window.isGridEditing) addDashWater();" 
+                                class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg active:scale-125 transition-transform">
+                            <i class="fa-solid fa-plus text-xs"></i>
+                        </button>
                     </div>
                 </div>
                 

@@ -420,11 +420,11 @@ window.diarioAlimentareModule = (function() {
 
             // Crea il container temporaneo per html2pdf
             const container = document.createElement('div');
-            container.style.padding = '40px';
+            container.style.padding = '20px'; // Ridotto padding per guadagnare spazio
             container.style.backgroundColor = '#fff';
             container.style.color = '#333';
             container.style.fontFamily = 'Arial, sans-serif';
-            container.style.width = '800px';
+            container.style.width = '700px'; // Larghezza ottimale per A4 verticale
 
             let html = `
                 <div style="border-bottom: 3px solid #3b82f6; padding-bottom: 20px; mb-30px; display: flex; justify-content: space-between; align-items: center;">
@@ -453,14 +453,14 @@ window.diarioAlimentareModule = (function() {
                         <h3 style="background: #f1f5f9; padding: 10px 15px; border-radius: 8px; font-size: 16px; color: #1e293b; margin-bottom: 10px;">${formattedDate}</h3>
                         <div style="padding-left: 10px;">
                             <p style="font-size: 12px; color: #3b82f6; font-weight: bold; margin-bottom: 10px;">💧 Acqua: ${dayData.water} bicchieri (${(dayData.water * 0.25).toFixed(1)}L)</p>
-                            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed;">
                                 <thead>
                                     <tr style="border-bottom: 2px solid #e2e8f0; text-align: left; color: #64748b;">
-                                        <th style="padding: 8px 0; width: 100px;">Pasto</th>
-                                        <th style="padding: 8px 0;">Alimenti</th>
-                                        <th style="padding: 8px 0; width: 80px;">Quantità</th>
-                                        <th style="padding: 8px 0; width: 60px;">Fame</th>
-                                        <th style="padding: 8px 0; width: 60px;">Note</th>
+                                        <th style="padding: 8px 0; width: 80px;">Pasto</th>
+                                        <th style="padding: 8px 0; width: 220px;">Alimenti</th>
+                                        <th style="padding: 8px 0; width: 70px;">Quantità</th>
+                                        <th style="padding: 8px 0; width: 50px;">Fame</th>
+                                        <th style="padding: 8px 0; width: 150px;">Note</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -470,11 +470,11 @@ window.diarioAlimentareModule = (function() {
                 dayData.meals.sort((a, b) => order.indexOf(a.meal_type) - order.indexOf(b.meal_type)).forEach(m => {
                     html += `
                         <tr style="border-bottom: 1px solid #f1f5f9;">
-                            <td style="padding: 10px 0; font-weight: bold;">${m.meal_type}</td>
-                            <td style="padding: 10px 0;">${m.foods}${m.is_cheat_meal ? ' <span style="color: #f97316; font-weight: bold;">(SGARRO)</span>' : ''}</td>
-                            <td style="padding: 10px 0;">${m.quantity || '-'}</td>
-                            <td style="padding: 10px 0;">${m.hunger_level || '-'} / 5</td>
-                            <td style="padding: 10px 0; font-style: italic; color: #64748b;">${m.notes || ''}</td>
+                            <td style="padding: 10px 5px 10px 0; font-weight: bold; vertical-align: top; word-wrap: break-word;">${m.meal_type}</td>
+                            <td style="padding: 10px 5px 10px 0; vertical-align: top; word-wrap: break-word;">${m.foods}${m.is_cheat_meal ? ' <span style="color: #f97316; font-weight: bold;">(SGARRO)</span>' : ''}</td>
+                            <td style="padding: 10px 5px 10px 0; vertical-align: top; word-wrap: break-word;">${m.quantity || '-'}</td>
+                            <td style="padding: 10px 5px 10px 0; vertical-align: top; word-wrap: break-word;">${m.hunger_level || '-'} / 5</td>
+                            <td style="padding: 10px 5px 10px 0; vertical-align: top; word-wrap: break-word; font-style: italic; color: #64748b;">${m.notes || ''}</td>
                         </tr>
                     `;
                 });
