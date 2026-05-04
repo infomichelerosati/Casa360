@@ -211,8 +211,40 @@
     </div>
 
 
+    <!-- WIDGET DIARIO ALIMENTARE (Nuovo) -->
+    <div class="grid-stack-item" gs-id="widget-diario" gs-w="12" gs-h="4" gs-x="0" gs-y="28">
+        <div class="grid-stack-item-content">
+            <div id="dash-diario-widget"
+                class="clay-card bg-darkblue-card rounded-clay p-5 h-full flex flex-col justify-between cursor-pointer active:scale-95 transition-transform overflow-hidden relative"
+                onclick="if(!window.isGridEditing) navigateApp('diario_alimentare');">
+                
+                <!-- Sfondo decorativo -->
+                <div class="absolute -top-4 -right-4 w-20 h-20 bg-emerald-500/10 rounded-full blur-2xl"></div>
+                
+                <div class="flex justify-between items-start w-full relative z-10">
+                    <div class="w-10 h-10 rounded-full bg-darkblue-base text-emerald-500 flex items-center justify-center shadow-inner">
+                        <i class="fa-solid fa-apple-whole"></i>
+                    </div>
+                    <div class="flex items-center gap-1.5 bg-darkblue-base/50 px-2 py-1 rounded-full border border-darkblue-card">
+                        <i class="fa-solid fa-droplet text-blue-400 text-[10px]"></i>
+                        <span id="dash-water-val" class="text-[10px] font-bold text-white">0</span>
+                        <span class="text-[8px] text-darkblue-icon font-bold">/8</span>
+                    </div>
+                </div>
+                
+                <div class="z-10 relative mt-2">
+                    <h3 class="text-xs font-bold text-emerald-500 uppercase tracking-widest mb-1">Diario Dieta</h3>
+                    <div id="dash-diario-status">
+                        <h3 class="text-sm leading-tight text-darkblue-icon truncate">Ultimo Pasto</h3>
+                        <h3 id="dash-last-meal-name" class="text-lg leading-tight font-bold text-darkblue-heading mt-1 line-clamp-1">Nessun dato</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- WIDGET SPORT -->
-    <div class="grid-stack-item" gs-id="widget-sport" gs-w="12" gs-h="4" gs-x="0" gs-y="28">
+    <div class="grid-stack-item" gs-id="widget-sport" gs-w="12" gs-h="4" gs-x="0" gs-y="32">
         <div class="grid-stack-item-content">
             <div id="dash-sport-widget"
                 class="clay-card bg-darkblue-card rounded-clay p-5 h-full flex flex-col justify-between cursor-pointer active:scale-95 transition-transform"

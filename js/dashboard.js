@@ -20,6 +20,7 @@ async function initDashboard() {
     fetchDashPets();
     fetchDashDocs();
     fetchNextSport();
+    fetchFoodDiary();
 
     // Al primo caricamento, prova a scaricare il meteo basandosi sull'ultima posizione (se salvata in localStorage) o fallback Roma.
     // Il permesso geolocalizzazione verrà chiesto la prima volta che si esegue la funzione meteo vera e propria.
@@ -96,6 +97,8 @@ async function initGridStack() {
                     icon = 'fa-paw'; title = 'Animali';
                 } else if (widgetType === 'widget-sport') {
                     icon = 'fa-volleyball'; title = 'Sport';
+                } else if (widgetType === 'widget-diario') {
+                    icon = 'fa-apple-whole'; title = 'Diario';
                 }
 
                 item.el.setAttribute('data-dock-icon', icon);
@@ -330,6 +333,7 @@ async function loadGridLayout() {
                         else if (widgetType === 'widget-documenti') { icon = 'fa-folder-open'; title = 'Archivio'; }
                         else if (widgetType === 'widget-animali') { icon = 'fa-paw'; title = 'Animali'; }
                         else if (widgetType === 'widget-sport') { icon = 'fa-volleyball'; title = 'Sport'; }
+                        else if (widgetType === 'widget-diario') { icon = 'fa-apple-whole'; title = 'Diario'; }
 
                         el.setAttribute('data-dock-icon', icon);
                         el.setAttribute('data-dock-title', title);
@@ -1327,6 +1331,54 @@ window.fetchNextSport = async function() {
 
     } catch (err) {
         console.error("Errore fetch dashboard sport", err);
+    }
+};
+
+// ==========================================
+// DIARIO ALIMENTARE WIDGET
+// ==========================================
+window.fetchFoodDiary = async function() {
+    const mealEl = document.getElementById('dash-last-meal-name');
+    const waterEl = document.getElementById('dash-water-val');
+    if (!mealEl || !waterEl) return;
+
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const todayStr = new Date().toISOString().split('T')[0];
+
+        // 1. Fetch Ultimo Pasto
+        const { data: lastMeal, error: mealErr } = await supabase
+            .from('food_diary_entries')
+            .select('foods, meal_type')
+            .eq('member_id', user.id)
+            .eq('entry_date', todayStr)
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+        if (mealErr) throw mealErr;
+
+        if (lastMeal && lastMeal.length > 0) {
+            mealEl.textContent = `${lastMeal[0].meal_type}: ${lastMeal[0].foods}`;
+        } else {
+            mealEl.textContent = "Nessun pasto segnato";
+        }
+
+        // 2. Fetch Acqua
+        const { data: waterData, error: waterErr } = await supabase
+            .from('food_diary_water')
+            .select('glasses')
+            .eq('member_id', user.id)
+            .eq('entry_date', todayStr);
+
+        if (waterErr) throw waterErr;
+
+        const totalGlasses = waterData ? waterData.reduce((sum, log) => sum + log.glasses, 0) : 0;
+        waterEl.textContent = totalGlasses;
+
+    } catch (err) {
+        console.error("Errore fetch dashboard diario", err);
     }
 };
 

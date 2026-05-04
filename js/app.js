@@ -269,6 +269,13 @@ function initModuleLogic(moduleName) {
                 console.error("Funzione initPasti non trovata.");
             }
             break;
+        case 'diario_alimentare':
+            if (window.diarioAlimentareModule) {
+                window.diarioAlimentareModule.init();
+            } else {
+                console.error("Oggetto diarioAlimentareModule non trovato.");
+            }
+            break;
         case 'auth':
             if (typeof initAuth === 'function') {
                 initAuth();
@@ -440,8 +447,23 @@ window.updateNotificationBadges = async function () {
             });
         }
 
+        // 6. Diario Alimentare (Reminder Pasti)
+        const currentHour = new Date().getHours();
+        if (currentHour >= 20) { // Dopo le 20:00 ricordiamo di segnare i pasti se vuoto
+            const { count: entriesToday } = await supabase.from('food_diary_entries').select('*', { count: 'exact', head: true }).eq('member_id', user.id).eq('entry_date', todayLocal);
+            if (entriesToday === 0 && !isDismissed('reminder-diario-alimentare')) {
+                notifications.push({
+                    id: 'reminder-diario-alimentare',
+                    type: 'diario_alimentare',
+                    title: '🥗 Diario Alimentare',
+                    msg: 'Non hai ancora registrato i pasti di oggi. Fallo ora per non dimenticare!',
+                    icon: 'fa-apple-whole',
+                    color: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20'
+                });
+            }
+        }
 
-        // 6. Scadenze Documenti (entro oggi)
+        // 7. Scadenze Documenti (entro oggi)
         const { data: docsRem } = await supabase.from('family_documents').select('*, family_members(name)').lte('expiry_date', todayLocal);
         if (docsRem) {
             docsRem.forEach(d => {
