@@ -139,16 +139,26 @@
                 </div>
             </div>
 
-            <div class="flex flex-col gap-2">
-                <label class="text-xs font-bold text-darkblue-icon uppercase ml-4">Livello di Sazietà (1-5)</label>
-                <div class="flex justify-between px-4 mt-2">
-                    <input type="range" id="dm-hunger" min="1" max="5" step="1" value="3" class="w-full accent-darkblue-accent">
+            <!-- Orario e Luogo -->
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="flex flex-col gap-2">
+                    <label class="text-[10px] font-bold text-darkblue-icon uppercase tracking-widest px-1">Orario</label>
+                    <input type="time" id="dm-time" class="bg-darkblue-base text-white rounded-2xl p-4 text-sm border-none focus:ring-2 focus:ring-emerald-500 shadow-inner outline-none">
                 </div>
-                <div class="flex justify-between px-4 text-[10px] font-bold text-darkblue-icon uppercase">
-                    <span>Sazio</span>
-                    <span>Normale</span>
-                    <span>Molta Fame</span>
+                <div class="flex flex-col gap-2">
+                    <label class="text-[10px] font-bold text-darkblue-icon uppercase tracking-widest px-1">Luogo</label>
+                    <input type="text" id="dm-location" placeholder="Casa, Ristorante..." class="bg-darkblue-base text-white rounded-2xl p-4 text-sm border-none focus:ring-2 focus:ring-emerald-500 shadow-inner outline-none">
                 </div>
+            </div>
+
+            <!-- Livello Fame -->
+            <div class="flex flex-col gap-2 mb-6">
+                <div class="flex justify-between items-center px-1">
+                    <label class="text-[10px] font-bold text-darkblue-icon uppercase tracking-widest">Livello di Fame (1-10)</label>
+                    <span id="dm-hunger-val" class="text-xs font-bold text-emerald-500">5</span>
+                </div>
+                <input type="range" id="dm-hunger" min="1" max="10" step="1" value="5" class="w-full h-2 bg-darkblue-base rounded-lg appearance-none cursor-pointer accent-emerald-500" 
+                        oninput="document.getElementById('dm-hunger-val').textContent = this.value">
             </div>
 
             <div class="flex items-center gap-3 ml-4 mt-2">

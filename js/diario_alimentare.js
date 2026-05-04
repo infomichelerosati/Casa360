@@ -204,9 +204,9 @@ window.diarioAlimentareModule = (function() {
         const sortedEntries = [...entries].sort((a, b) => order.indexOf(a.meal_type) - order.indexOf(b.meal_type));
 
         DOM.timeline.innerHTML = sortedEntries.map(entry => {
-            const time = new Date(entry.created_at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+            const time = entry.meal_time ? entry.meal_time.substring(0, 5) : new Date(entry.created_at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
             const emoji = getMealEmoji(entry.meal_type);
-            const hungerLabels = ["", "Sazio", "Poco affamato", "Equilibrato", "Affamato", "Molta Fame"];
+            const hungerLabels = ["", "Per nulla", "Quasi nulla", "Sazio", "Soddisfatto", "Equilibrato", "Appetito", "Fame", "Molta Fame", "Fame Chimica", "Incontenibile"];
             
             return `
                 <div class="clay-card bg-darkblue-card rounded-3xl p-4 flex gap-4 relative group animate-fade-in">
@@ -219,7 +219,10 @@ window.diarioAlimentareModule = (function() {
                     </div>
                     <div class="flex-1">
                         <div class="flex justify-between items-start mb-1">
-                            <h4 class="text-xs font-bold text-darkblue-accent uppercase tracking-wider">${entry.meal_type}</h4>
+                            <div class="flex flex-col">
+                                <h4 class="text-xs font-bold text-darkblue-accent uppercase tracking-wider">${entry.meal_type}</h4>
+                                ${entry.location ? `<span class="text-[9px] text-darkblue-icon/60 font-medium"><i class="fa-solid fa-location-dot mr-1"></i>${entry.location}</span>` : ''}
+                            </div>
                             <button onclick="window.diarioAlimentareModule.deleteEntry('${entry.id}')" class="text-red-500/30 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">
                                 <i class="fa-solid fa-trash-can text-xs"></i>
                             </button>
@@ -273,6 +276,13 @@ window.diarioAlimentareModule = (function() {
     // MODAL LOGIC
     function openMealModal() {
         DOM.formMeal.reset();
+        
+        // Pre-fill current time
+        const now = new Date();
+        const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+        document.getElementById('dm-time').value = timeStr;
+        document.getElementById('dm-hunger-val').textContent = "5";
+        
         DOM.modalMeal.classList.remove('opacity-0', 'pointer-events-none');
         DOM.modalMealContent.classList.remove('translate-y-full');
     }
@@ -295,6 +305,8 @@ window.diarioAlimentareModule = (function() {
             quantity: document.getElementById('dm-quantity').value || null,
             calories: parseInt(document.getElementById('dm-calories').value) || null,
             hunger_level: parseInt(document.getElementById('dm-hunger').value),
+            meal_time: document.getElementById('dm-time').value || null,
+            location: document.getElementById('dm-location').value || null,
             is_cheat_meal: document.getElementById('dm-cheat').checked,
             notes: document.getElementById('dm-notes').value || null
         };
@@ -407,18 +419,31 @@ window.diarioAlimentareModule = (function() {
 
             const { data: allEntries, error: errE } = await query;
             const { data: allWater, error: errW } = await window.supabase.from('food_diary_water').select('*').eq('member_id', currentMemberId);
+            
+            // Recupera anche sport
+            let sportQuery = window.supabase.from('sport_activities').select('*').eq('member_id', currentMemberId).eq('is_completed', true);
+            if (type === 'weekly') {
+                 const oneWeekAgo = new Date();
+                 oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+                 sportQuery = sportQuery.gte('activity_date', oneWeekAgo.toISOString().split('T')[0]);
+            }
+            const { data: allSport, error: errS } = await sportQuery;
 
-            if (errE || errW) throw (errE || errW);
+            if (errE || errW || errS) throw (errE || errW || errS);
 
             // Raggruppa per data
             const diaryByDate = {};
             allEntries.forEach(e => {
-                if (!diaryByDate[e.entry_date]) diaryByDate[e.entry_date] = { meals: [], water: 0 };
+                if (!diaryByDate[e.entry_date]) diaryByDate[e.entry_date] = { meals: [], water: 0, sport: [] };
                 diaryByDate[e.entry_date].meals.push(e);
             });
             allWater.forEach(w => {
-                if (!diaryByDate[w.entry_date]) diaryByDate[w.entry_date] = { meals: [], water: 0 };
+                if (!diaryByDate[w.entry_date]) diaryByDate[w.entry_date] = { meals: [], water: 0, sport: [] };
                 diaryByDate[w.entry_date].water += w.glasses;
+            });
+            allSport.forEach(s => {
+                if (!diaryByDate[s.activity_date]) diaryByDate[s.activity_date] = { meals: [], water: 0, sport: [] };
+                diaryByDate[s.activity_date].sport.push(s);
             });
 
             const sortedDates = Object.keys(diaryByDate).sort((a, b) => new Date(b) - new Date(a));
@@ -457,15 +482,19 @@ window.diarioAlimentareModule = (function() {
                     <div style="margin-top: 25px; page-break-inside: avoid;">
                         <h3 style="background: #f1f5f9; padding: 10px 15px; border-radius: 8px; font-size: 16px; color: #1e293b; margin-bottom: 10px;">${formattedDate}</h3>
                         <div style="padding-left: 10px;">
-                            <p style="font-size: 12px; color: #3b82f6; font-weight: bold; margin-bottom: 10px;">💧 Acqua: ${dayData.water} bicchieri (${(dayData.water * 0.25).toFixed(1)}L)</p>
+                            <div style="display: flex; gap: 20px; margin-bottom: 10px;">
+                                <p style="font-size: 12px; color: #3b82f6; font-weight: bold; margin: 0;">💧 Acqua: ${dayData.water} bicchieri (${(dayData.water * 0.25).toFixed(1)}L)</p>
+                                ${dayData.sport.length > 0 ? `<p style="font-size: 12px; color: #f97316; font-weight: bold; margin: 0;">🏃 Sport: ${dayData.sport.map(s => s.sport_name).join(', ')}</p>` : ''}
+                            </div>
                             <table style="width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed;">
                                 <thead>
                                     <tr style="border-bottom: 2px solid #e2e8f0; text-align: left; color: #64748b;">
-                                        <th style="padding: 8px 0; width: 80px;">Pasto</th>
-                                        <th style="padding: 8px 0; width: 220px;">Alimenti</th>
-                                        <th style="padding: 8px 0; width: 70px;">Quantità</th>
-                                        <th style="padding: 8px 0; width: 50px;">Fame</th>
-                                        <th style="padding: 8px 0; width: 150px;">Note</th>
+                                        <th style="padding: 8px 0; width: 60px;">Ora</th>
+                                        <th style="padding: 8px 0; width: 70px;">Pasto</th>
+                                        <th style="padding: 8px 0; width: 180px;">Alimenti / Luogo</th>
+                                        <th style="padding: 8px 0; width: 60px;">Qtà</th>
+                                        <th style="padding: 8px 0; width: 40px;">Fame</th>
+                                        <th style="padding: 8px 0; width: 130px;">Note</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -475,10 +504,15 @@ window.diarioAlimentareModule = (function() {
                 dayData.meals.sort((a, b) => order.indexOf(a.meal_type) - order.indexOf(b.meal_type)).forEach(m => {
                     html += `
                         <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 10px 5px 10px 0; vertical-align: top; word-wrap: break-word;">${m.meal_time ? m.meal_time.substring(0, 5) : '-'}</td>
                             <td style="padding: 10px 5px 10px 0; font-weight: bold; vertical-align: top; word-wrap: break-word;">${m.meal_type}</td>
-                            <td style="padding: 10px 5px 10px 0; vertical-align: top; word-wrap: break-word;">${m.foods}${m.is_cheat_meal ? ' <span style="color: #f97316; font-weight: bold;">(SGARRO)</span>' : ''}</td>
+                            <td style="padding: 10px 5px 10px 0; vertical-align: top; word-wrap: break-word;">
+                                <div style="font-weight: 500;">${m.foods}</div>
+                                ${m.location ? `<div style="font-size: 9px; color: #64748b; margin-top: 2px;">📍 ${m.location}</div>` : ''}
+                                ${m.is_cheat_meal ? '<span style="color: #f97316; font-weight: bold; font-size: 9px;">(SGARRO)</span>' : ''}
+                            </td>
                             <td style="padding: 10px 5px 10px 0; vertical-align: top; word-wrap: break-word;">${m.quantity || '-'}</td>
-                            <td style="padding: 10px 5px 10px 0; vertical-align: top; word-wrap: break-word;">${m.hunger_level || '-'} / 5</td>
+                            <td style="padding: 10px 5px 10px 0; vertical-align: top; word-wrap: break-word;">${m.hunger_level || '-'}</td>
                             <td style="padding: 10px 5px 10px 0; vertical-align: top; word-wrap: break-word; font-style: italic; color: #64748b;">${m.notes || ''}</td>
                         </tr>
                     `;
