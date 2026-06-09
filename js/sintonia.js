@@ -1,9 +1,10 @@
 // js/sintonia.js
 
 const INTERNAL_STATES = [
-    { id: 'Energico', label: 'Energico', icon: 'fa-battery-full', color: 'text-green-500', value: 7 },
-    { id: 'Allegro', label: 'Allegro', icon: 'fa-face-smile', color: 'text-yellow-500', value: 6 },
-    { id: 'Calmo', label: 'Calmo', icon: 'fa-seedling', color: 'text-teal-500', value: 5 },
+    { id: 'Energico', label: 'Energico', icon: 'fa-battery-full', color: 'text-green-500', value: 8 },
+    { id: 'Allegro', label: 'Allegro', icon: 'fa-face-smile', color: 'text-yellow-500', value: 7 },
+    { id: 'Calmo', label: 'Calmo', icon: 'fa-seedling', color: 'text-teal-500', value: 6 },
+    { id: 'Indifferente', label: 'Indiff.', icon: 'fa-face-meh', color: 'text-gray-400', value: 5 },
     { id: 'Stanco', label: 'Stanco', icon: 'fa-battery-quarter', color: 'text-orange-500', value: 4 },
     { id: 'Sotto pressione', label: 'Pressato', icon: 'fa-weight-hanging', color: 'text-purple-500', value: 3 },
     { id: 'Triste', label: 'Triste', icon: 'fa-cloud-rain', color: 'text-blue-500', value: 2 },
@@ -269,9 +270,9 @@ async function renderSintoniaChart() {
                                 const relOpt = RELATIONAL_OPTIONS.find(o => o.id === v);
                                 if (relOpt) sum += relOpt.value;
                             });
-                            // Scala 1-3 to 1-7 circa (1->1, 2->4, 3->7)
+                            // Scala 1-3 to 1-8 circa (1->1, 2->4.5, 3->8)
                             const avgRel = sum / vals.length;
-                            const scaledRel = 1 + (avgRel - 1) * 3; 
+                            const scaledRel = 1 + (avgRel - 1) * 3.5; 
                             datesMap[log.log_date].family = scaledRel;
                         }
                     }
@@ -347,7 +348,7 @@ async function renderSintoniaChart() {
                 scales: {
                     y: {
                         min: 1,
-                        max: 7,
+                        max: 8,
                         ticks: { stepSize: 1 },
                         grid: { color: '#334155', drawBorder: false }
                     },

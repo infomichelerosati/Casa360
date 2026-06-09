@@ -1462,6 +1462,7 @@ window.fetchSintoniaDashboard = async function() {
             'Energico': '<i class="fa-solid fa-battery-full text-green-500"></i>',
             'Stanco': '<i class="fa-solid fa-battery-quarter text-orange-500"></i>',
             'Calmo': '<i class="fa-solid fa-seedling text-teal-500"></i>',
+            'Indifferente': '<i class="fa-solid fa-face-meh text-gray-400"></i>',
             'Sotto pressione': '<i class="fa-solid fa-weight-hanging text-purple-500"></i>',
             'Allegro': '<i class="fa-solid fa-face-smile text-yellow-500"></i>',
             'Triste': '<i class="fa-solid fa-cloud-rain text-blue-500"></i>',
