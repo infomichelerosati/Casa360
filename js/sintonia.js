@@ -20,6 +20,21 @@ const RELATIONAL_OPTIONS = [
 let sintoniaCurrentInternalState = null;
 let sintoniaCurrentRelationalStates = {}; // member_id -> 'heart'|'neutral'|'lightning'
 let sintoniaChartInstance = null;
+let currentSintoniaRange = '7d';
+
+window.setSintoniaTimeRange = function(range) {
+    currentSintoniaRange = range;
+    document.querySelectorAll('.sintonia-filter-btn').forEach(btn => {
+        if (btn.getAttribute('onclick').includes(range)) {
+            btn.classList.add('bg-darkblue-card', 'text-darkblue-heading', 'shadow-sm');
+            btn.classList.remove('text-darkblue-icon', 'hover:text-darkblue-heading');
+        } else {
+            btn.classList.remove('bg-darkblue-card', 'text-darkblue-heading', 'shadow-sm');
+            btn.classList.add('text-darkblue-icon', 'hover:text-darkblue-heading');
+        }
+    });
+    renderSintoniaChart();
+};
 
 async function initSintonia() {
     console.log("Inizializzazione Modulo Sintonia...");
@@ -224,34 +239,66 @@ async function renderSintoniaChart() {
         const { data: { user } } = await supabase.auth.getUser();
         const familyId = await window.getUserFamilyId();
         
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6); // 7 gg incluso oggi
-        const startDateStr = sevenDaysAgo.toISOString().split('T')[0];
-        
-        // Fetch logs for current user
-        const { data: logs, error } = await supabase
-            .from('sintonia_logs')
-            .select('*')
-            .eq('family_id', familyId)
-            .eq('member_id', user.id)
-            .gte('log_date', startDateStr)
-            .order('log_date', { ascending: true });
-            
+        const now = new Date();
+        let startDateStr = null;
+        let daysToGenerate = 0;
+        let query = supabase.from('sintonia_logs').select('*').eq('family_id', familyId).eq('member_id', user.id);
+
+        if (currentSintoniaRange === '7d') {
+            const d = new Date(now); d.setDate(d.getDate() - 6);
+            startDateStr = d.toISOString().split('T')[0];
+            query = query.gte('log_date', startDateStr);
+            daysToGenerate = 7;
+        } else if (currentSintoniaRange === '30d') {
+            const d = new Date(now); d.setDate(d.getDate() - 29);
+            startDateStr = d.toISOString().split('T')[0];
+            query = query.gte('log_date', startDateStr);
+            daysToGenerate = 30;
+        } else if (currentSintoniaRange === '1y') {
+            const d = new Date(now); d.setFullYear(d.getFullYear() - 1);
+            startDateStr = d.toISOString().split('T')[0];
+            query = query.gte('log_date', startDateStr);
+            daysToGenerate = 365;
+        }
+
+        const { data: logs, error } = await query.order('log_date', { ascending: true });
         if (error && error.code !== '42P01') throw error;
         
         // Prepare data
         const labels = [];
         const personalTrend = [];
         const familyTrend = [];
-        
-        // Generate last 7 days array
         const datesMap = {};
-        for (let i = 0; i < 7; i++) {
-            const d = new Date(sevenDaysAgo);
-            d.setDate(d.getDate() + i);
-            const dStr = d.toISOString().split('T')[0];
-            datesMap[dStr] = { personal: null, family: null };
-            labels.push(d.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' }));
+        
+        if (currentSintoniaRange === 'all') {
+            if (logs && logs.length > 0) {
+                const firstDate = new Date(logs[0].log_date);
+                const diffTime = Math.abs(now - firstDate);
+                daysToGenerate = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
+                for (let i = 0; i < daysToGenerate; i++) {
+                    const d = new Date(firstDate);
+                    d.setDate(d.getDate() + i);
+                    const dStr = d.toISOString().split('T')[0];
+                    datesMap[dStr] = { personal: null, family: null };
+                    labels.push(d.toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: '2-digit' }));
+                }
+            } else {
+                labels.push('Nessun dato');
+            }
+        } else {
+            const startD = new Date(startDateStr);
+            for (let i = 0; i < daysToGenerate; i++) {
+                const d = new Date(startD);
+                d.setDate(d.getDate() + i);
+                const dStr = d.toISOString().split('T')[0];
+                datesMap[dStr] = { personal: null, family: null };
+                
+                if (currentSintoniaRange === '1y') {
+                    labels.push(d.toLocaleDateString('it-IT', { month: 'short', year: '2-digit' }));
+                } else {
+                    labels.push(d.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' }));
+                }
+            }
         }
         
         if (logs) {
