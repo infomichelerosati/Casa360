@@ -41,8 +41,8 @@
 
     <!-- SEZIONE GRAFICI -->
     <section class="clay-card bg-darkblue-card rounded-clay p-6">
-        <h2 class="text-xl font-bold text-darkblue-heading mb-4">Il tuo Trend</h2>
-        <p class="text-sm text-darkblue-icon mb-4">Valori da 1 (Peggiore) a 8 (Migliore) per l'umore, e media delle relazioni.</p>
+        <h2 class="text-xl font-bold text-darkblue-heading mb-4">I tuoi Trend</h2>
+        <p class="text-sm text-darkblue-icon mb-4">Andamento del tuo umore e delle relazioni con ogni familiare.</p>
         
         <!-- Filtri temporali -->
         <div class="flex gap-2 mb-6 bg-darkblue-base p-1 rounded-xl w-max">
@@ -52,8 +52,8 @@
             <button class="sintonia-filter-btn flex-1 px-3 py-1.5 rounded-lg text-xs font-bold text-darkblue-icon hover:text-darkblue-heading" onclick="setSintoniaTimeRange('all')">Sempre</button>
         </div>
         
-        <div class="w-full aspect-[4/3] relative">
-            <canvas id="sintonia-chart"></canvas>
+        <div id="sintonia-charts-container" class="flex flex-col gap-8">
+            <div class="text-center text-darkblue-icon text-sm py-4"><i class="fa-solid fa-circle-notch fa-spin"></i> Caricamento grafici...</div>
         </div>
     </section>
 

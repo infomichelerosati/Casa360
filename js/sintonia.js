@@ -19,7 +19,7 @@ const RELATIONAL_OPTIONS = [
 
 let sintoniaCurrentInternalState = null;
 let sintoniaCurrentRelationalStates = {}; // member_id -> 'heart'|'neutral'|'lightning'
-let sintoniaChartInstance = null;
+let sintoniaChartInstances = [];
 let currentSintoniaRange = '7d';
 
 window.setSintoniaTimeRange = function(range) {
@@ -232,13 +232,22 @@ window.saveSintoniaCheckin = async function() {
 }
 
 async function renderSintoniaChart() {
-    const canvas = document.getElementById('sintonia-chart');
-    if (!canvas) return;
+    const container = document.getElementById('sintonia-charts-container');
+    if (!container) return;
     
     try {
         const { data: { user } } = await supabase.auth.getUser();
         const familyId = await window.getUserFamilyId();
         
+        // Fetch altri membri per i nomi e per sapere quanti grafici fare
+        const { data: members, error: memErr } = await supabase
+            .from('family_members')
+            .select('id, name')
+            .eq('family_id', familyId)
+            .neq('id', user.id);
+        
+        if (memErr) throw memErr;
+
         const now = new Date();
         let startDateStr = null;
         let daysToGenerate = 0;
@@ -264,10 +273,13 @@ async function renderSintoniaChart() {
         const { data: logs, error } = await query.order('log_date', { ascending: true });
         if (error && error.code !== '42P01') throw error;
         
-        // Prepare data
         const labels = [];
         const personalTrend = [];
-        const familyTrend = [];
+        const relationalTrends = {}; // member.id -> []
+        if (members) {
+            members.forEach(m => relationalTrends[m.id] = []);
+        }
+        
         const datesMap = {};
         
         if (currentSintoniaRange === 'all') {
@@ -279,7 +291,7 @@ async function renderSintoniaChart() {
                     const d = new Date(firstDate);
                     d.setDate(d.getDate() + i);
                     const dStr = d.toISOString().split('T')[0];
-                    datesMap[dStr] = { personal: null, family: null };
+                    datesMap[dStr] = { personal: null, relations: {} };
                     labels.push(d.toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: '2-digit' }));
                 }
             } else {
@@ -291,7 +303,7 @@ async function renderSintoniaChart() {
                 const d = new Date(startD);
                 d.setDate(d.getDate() + i);
                 const dStr = d.toISOString().split('T')[0];
-                datesMap[dStr] = { personal: null, family: null };
+                datesMap[dStr] = { personal: null, relations: {} };
                 
                 if (currentSintoniaRange === '1y') {
                     labels.push(d.toLocaleDateString('it-IT', { month: 'short', year: '2-digit' }));
@@ -304,23 +316,16 @@ async function renderSintoniaChart() {
         if (logs) {
             logs.forEach(log => {
                 if (datesMap[log.log_date]) {
-                    // Calc personal value
                     const intOpt = INTERNAL_STATES.find(s => s.id === log.internal_state);
                     if (intOpt) datesMap[log.log_date].personal = intOpt.value;
                     
-                    // Calc family average
                     if (log.relational_states) {
-                        const vals = Object.values(log.relational_states);
-                        if (vals.length > 0) {
-                            let sum = 0;
-                            vals.forEach(v => {
-                                const relOpt = RELATIONAL_OPTIONS.find(o => o.id === v);
-                                if (relOpt) sum += relOpt.value;
-                            });
-                            // Scala 1-3 to 1-8 circa (1->1, 2->4.5, 3->8)
-                            const avgRel = sum / vals.length;
-                            const scaledRel = 1 + (avgRel - 1) * 3.5; 
-                            datesMap[log.log_date].family = scaledRel;
+                        for (const memberId in log.relational_states) {
+                            const valStr = log.relational_states[memberId];
+                            const relOpt = RELATIONAL_OPTIONS.find(o => o.id === valStr);
+                            if (relOpt) {
+                                datesMap[log.log_date].relations[memberId] = relOpt.value;
+                            }
                         }
                     }
                 }
@@ -329,84 +334,87 @@ async function renderSintoniaChart() {
         
         Object.keys(datesMap).sort().forEach(d => {
             personalTrend.push(datesMap[d].personal);
-            familyTrend.push(datesMap[d].family);
-        });
-        
-        if (sintoniaChartInstance) {
-            sintoniaChartInstance.destroy();
-        }
-        
-        Chart.defaults.color = '#8a9ab4';
-        Chart.defaults.font.family = 'Inter, sans-serif';
-        
-        sintoniaChartInstance = new Chart(canvas, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Umore',
-                        data: personalTrend,
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        borderWidth: 3,
-                        tension: 0.4,
-                        fill: true,
-                        pointBackgroundColor: '#1a2235',
-                        pointBorderColor: '#3b82f6',
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
-                        spanGaps: true
-                    },
-                    {
-                        label: 'Relazioni',
-                        data: familyTrend,
-                        borderColor: '#ec4899',
-                        backgroundColor: 'transparent',
-                        borderWidth: 2,
-                        borderDash: [5, 5],
-                        tension: 0.4,
-                        pointBackgroundColor: '#1a2235',
-                        pointBorderColor: '#ec4899',
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
-                        spanGaps: true
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: { usePointStyle: true, boxWidth: 8 }
-                    },
-                    tooltip: {
-                        backgroundColor: '#1a2235',
-                        titleColor: '#e2e8f0',
-                        bodyColor: '#8a9ab4',
-                        borderColor: '#334155',
-                        borderWidth: 1,
-                        padding: 10,
-                        displayColors: false
-                    }
-                },
-                scales: {
-                    y: {
-                        min: 1,
-                        max: 8,
-                        ticks: { stepSize: 1 },
-                        grid: { color: '#334155', drawBorder: false }
-                    },
-                    x: {
-                        grid: { display: false, drawBorder: false }
-                    }
-                }
+            if (members) {
+                members.forEach(m => {
+                    relationalTrends[m.id].push(datesMap[d].relations[m.id] || null);
+                });
             }
         });
         
+        // Distruggi vecchi grafici
+        sintoniaChartInstances.forEach(chart => chart.destroy());
+        sintoniaChartInstances = [];
+        container.innerHTML = '';
+        
+        Chart.defaults.color = '#8a9ab4';
+        Chart.defaults.font.family = 'Inter, sans-serif';
+
+        // Helper per creare un grafico
+        const createChart = (id, title, color, dataArr, maxVal, isDash = false) => {
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = `
+                <h3 class="text-sm font-bold text-darkblue-heading mb-2 flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full" style="background-color: ${color}"></div>
+                    ${title}
+                </h3>
+                <div class="w-full h-48 relative">
+                    <canvas id="${id}"></canvas>
+                </div>
+            `;
+            container.appendChild(wrapper);
+            
+            const canvas = document.getElementById(id);
+            const chart = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: title,
+                        data: dataArr,
+                        borderColor: color,
+                        backgroundColor: isDash ? 'transparent' : color + '1a', // 10% opacity
+                        borderWidth: isDash ? 2 : 3,
+                        borderDash: isDash ? [5, 5] : [],
+                        tension: 0.4,
+                        fill: !isDash,
+                        pointBackgroundColor: '#1a2235',
+                        pointBorderColor: color,
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        spanGaps: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1a2235', titleColor: '#e2e8f0', bodyColor: '#8a9ab4',
+                            borderColor: '#334155', borderWidth: 1, padding: 10, displayColors: false
+                        }
+                    },
+                    scales: {
+                        y: { min: 1, max: maxVal, ticks: { stepSize: 1 }, grid: { color: '#334155', drawBorder: false } },
+                        x: { grid: { display: false, drawBorder: false }, ticks: { autoSkip: true, maxTicksLimit: 10 } }
+                    }
+                }
+            });
+            sintoniaChartInstances.push(chart);
+        };
+
+        // 1. Grafico Umore
+        createChart('chart-umore', 'Umore Personale', '#3b82f6', personalTrend, 8, false);
+
+        // 2. Grafici per ogni familiare
+        if (members) {
+            members.forEach(m => {
+                createChart('chart-rel-' + m.id, 'Relazione con ' + m.name, '#ec4899', relationalTrends[m.id], 3, true);
+            });
+        }
+        
     } catch(err) {
-        console.error("Errore grafico sintonia", err);
+        console.error("Errore grafici sintonia", err);
+        container.innerHTML = '<div class="text-red-500 text-sm">Errore caricamento grafici.</div>';
     }
 }
