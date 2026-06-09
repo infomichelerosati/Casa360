@@ -1517,11 +1517,11 @@ window.fetchSintoniaDashboard = async function() {
                 }
 
                 const html = `
-                    <div class="clay-item bg-darkblue-base border border-darkblue-card rounded-xl p-2 flex items-center justify-between gap-3 flex-1 min-w-[45%]">
-                        <span class="text-xs font-bold text-darkblue-heading truncate">${member.name}</span>
-                        <div class="flex items-center gap-1.5 bg-darkblue-card px-2 py-1 rounded-lg">
+                    <div class="clay-item bg-darkblue-base border border-darkblue-card rounded-xl p-3 flex flex-col items-center justify-center gap-2 flex-1 min-w-[45%]">
+                        <span class="text-[13px] font-bold text-darkblue-heading truncate w-full text-center">${member.name}</span>
+                        <div class="flex items-center justify-center gap-3 bg-darkblue-card px-3 py-1.5 rounded-lg text-lg">
                             <span title="Stato: ${intState || 'Non inserito'}">${intIcon}</span>
-                            <div class="w-[1px] h-3 bg-darkblue-icon/30"></div>
+                            <div class="w-[1px] h-5 bg-darkblue-icon/30"></div>
                             ${relIconHtml}
                         </div>
                     </div>
