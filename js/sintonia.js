@@ -162,7 +162,8 @@ async function loadExistingCheckin() {
             .select('*')
             .eq('family_id', familyId)
             .eq('member_id', user.id)
-            .eq('log_date', todayStr);
+            .eq('log_date', todayStr)
+            .order('created_at', { ascending: false });
             
         if (error && error.code !== '42P01') throw error;
         
@@ -205,16 +206,28 @@ window.saveSintoniaCheckin = async function() {
         const familyId = await window.getUserFamilyId();
         const todayStr = new Date().toISOString().split('T')[0];
         
+        const { data: existingLogs, error: checkErr } = await supabase
+            .from('sintonia_logs')
+            .select('id')
+            .eq('family_id', familyId)
+            .eq('member_id', user.id)
+            .eq('log_date', todayStr);
+            
+        if (checkErr && checkErr.code !== '42P01') throw checkErr;
+        
+        if (existingLogs && existingLogs.length >= 3) {
+            window.showToast("Hai già raggiunto il limite di 3 check-in per oggi.", "error");
+            return;
+        }
+        
         const { error } = await supabase
             .from('sintonia_logs')
-            .upsert({
+            .insert({
                 family_id: familyId,
                 member_id: user.id,
                 log_date: todayStr,
                 internal_state: sintoniaCurrentInternalState,
                 relational_states: sintoniaCurrentRelationalStates
-            }, {
-                onConflict: 'family_id, member_id, log_date'
             });
             
         if (error) throw error;
@@ -291,7 +304,7 @@ async function renderSintoniaChart() {
                     const d = new Date(firstDate);
                     d.setDate(d.getDate() + i);
                     const dStr = d.toISOString().split('T')[0];
-                    datesMap[dStr] = { personal: null, relations: {} };
+                    datesMap[dStr] = { personalSum: 0, personalCount: 0, relations: {} };
                     labels.push(d.toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: '2-digit' }));
                 }
             } else {
@@ -303,7 +316,7 @@ async function renderSintoniaChart() {
                 const d = new Date(startD);
                 d.setDate(d.getDate() + i);
                 const dStr = d.toISOString().split('T')[0];
-                datesMap[dStr] = { personal: null, relations: {} };
+                datesMap[dStr] = { personalSum: 0, personalCount: 0, relations: {} };
                 
                 if (currentSintoniaRange === '1y') {
                     labels.push(d.toLocaleDateString('it-IT', { month: 'short', year: '2-digit' }));
@@ -317,14 +330,21 @@ async function renderSintoniaChart() {
             logs.forEach(log => {
                 if (datesMap[log.log_date]) {
                     const intOpt = INTERNAL_STATES.find(s => s.id === log.internal_state);
-                    if (intOpt) datesMap[log.log_date].personal = intOpt.value;
+                    if (intOpt) {
+                        datesMap[log.log_date].personalSum += intOpt.value;
+                        datesMap[log.log_date].personalCount++;
+                    }
                     
                     if (log.relational_states) {
                         for (const memberId in log.relational_states) {
                             const valStr = log.relational_states[memberId];
                             const relOpt = RELATIONAL_OPTIONS.find(o => o.id === valStr);
                             if (relOpt) {
-                                datesMap[log.log_date].relations[memberId] = relOpt.value;
+                                if (!datesMap[log.log_date].relations[memberId]) {
+                                    datesMap[log.log_date].relations[memberId] = { sum: 0, count: 0 };
+                                }
+                                datesMap[log.log_date].relations[memberId].sum += relOpt.value;
+                                datesMap[log.log_date].relations[memberId].count++;
                             }
                         }
                     }
@@ -333,10 +353,21 @@ async function renderSintoniaChart() {
         }
         
         Object.keys(datesMap).sort().forEach(d => {
-            personalTrend.push(datesMap[d].personal);
+            const dm = datesMap[d];
+            if (dm.personalCount > 0) {
+                personalTrend.push(dm.personalSum / dm.personalCount);
+            } else {
+                personalTrend.push(null);
+            }
+            
             if (members) {
                 members.forEach(m => {
-                    relationalTrends[m.id].push(datesMap[d].relations[m.id] || null);
+                    const rel = dm.relations[m.id];
+                    if (rel && rel.count > 0) {
+                        relationalTrends[m.id].push(rel.sum / rel.count);
+                    } else {
+                        relationalTrends[m.id].push(null);
+                    }
                 });
             }
         });

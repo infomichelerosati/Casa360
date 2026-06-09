@@ -1,0 +1,1 @@
+ALTER TABLE public.sintonia_logs DROP CONSTRAINT IF EXISTS sintonia_logs_family_id_member_id_log_date_key;

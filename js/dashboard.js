@@ -1446,15 +1446,18 @@ window.fetchSintoniaDashboard = async function() {
             .from('sintonia_logs')
             .select('member_id, internal_state, relational_states')
             .eq('family_id', familyId)
-            .eq('log_date', todayStr);
+            .eq('log_date', todayStr)
+            .order('created_at', { ascending: false });
 
         if (logErr && logErr.code !== '42P01') throw logErr; // Ignore table not found if not created yet
 
-        // Mappa i log per member_id
+        // Mappa i log per member_id (essendo ordinati decrescenti, prendiamo il primo che è il più recente)
         const logMap = {};
         if (logs) {
             logs.forEach(l => {
-                logMap[l.member_id] = l;
+                if (!logMap[l.member_id]) {
+                    logMap[l.member_id] = l;
+                }
             });
         }
 
