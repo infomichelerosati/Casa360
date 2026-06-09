@@ -1480,23 +1480,38 @@ window.fetchSintoniaDashboard = async function() {
         if (members && members.length > 0) {
             let hasLightnings = false;
             
+            // Log dell'utente corrente (per sapere cosa IO ho dato agli altri)
+            const currentUserLog = logMap[user.id];
+            
             members.forEach(member => {
                 const memberLog = logMap[member.id];
                 const intState = memberLog?.internal_state;
                 const intIcon = stateIcons[intState] || '<i class="fa-solid fa-circle-question text-gray-500"></i>';
                 
-                // Determina il "peggior" stato relazionale per questa persona (se ha messo un fulmine a qualcuno)
-                let worstRelState = 'neutral';
-                if (memberLog && memberLog.relational_states) {
-                    const values = Object.values(memberLog.relational_states);
-                    if (values.includes('lightning')) {
-                        worstRelState = 'lightning';
-                        hasLightnings = true;
-                    } else if (values.includes('heart')) {
-                        worstRelState = 'heart';
+                let relIconHtml = '';
+                
+                if (member.id === user.id) {
+                    // Riga dell'utente: mostra il suo stato interno e magari un riepilogo di quello che lui prova verso la famiglia
+                    let worstRelState = 'neutral';
+                    if (currentUserLog && currentUserLog.relational_states) {
+                        const values = Object.values(currentUserLog.relational_states);
+                        if (values.includes('lightning')) { worstRelState = 'lightning'; hasLightnings = true; }
+                        else if (values.includes('heart')) { worstRelState = 'heart'; }
                     }
+                    const relIcon = currentUserLog ? relationIcons[worstRelState] : '<i class="fa-solid fa-minus text-gray-500"></i>';
+                    relIconHtml = `<span title="Verso la famiglia: ${worstRelState}">${relIcon}</span>`;
+                } else {
+                    // Riga di un altro membro: mostra come LUI si sente, e come IO mi sento verso di lui
+                    let myRelationToThem = 'neutral'; // default
+                    if (currentUserLog && currentUserLog.relational_states && currentUserLog.relational_states[member.id]) {
+                        myRelationToThem = currentUserLog.relational_states[member.id];
+                        if (myRelationToThem === 'lightning') hasLightnings = true;
+                    }
+                    // Se io non ho ancora fatto il check-in, mostriamo un trattino o neutral? 
+                    // Mostriamo un trattino per far capire che manca il MIO input verso di lui.
+                    const relIcon = currentUserLog ? relationIcons[myRelationToThem] : '<i class="fa-solid fa-minus text-gray-500"></i>';
+                    relIconHtml = `<span title="Il mio stato verso di lui: ${myRelationToThem}">${relIcon}</span>`;
                 }
-                const relIcon = memberLog ? relationIcons[worstRelState] : '<i class="fa-solid fa-minus text-gray-500"></i>';
 
                 const html = `
                     <div class="clay-item bg-darkblue-base border border-darkblue-card rounded-xl p-2 flex items-center justify-between gap-3 flex-1 min-w-[45%]">
@@ -1504,7 +1519,7 @@ window.fetchSintoniaDashboard = async function() {
                         <div class="flex items-center gap-1.5 bg-darkblue-card px-2 py-1 rounded-lg">
                             <span title="Stato: ${intState || 'Non inserito'}">${intIcon}</span>
                             <div class="w-[1px] h-3 bg-darkblue-icon/30"></div>
-                            <span title="Relazioni: ${worstRelState}">${relIcon}</span>
+                            ${relIconHtml}
                         </div>
                     </div>
                 `;
