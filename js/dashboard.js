@@ -100,6 +100,8 @@ async function initGridStack() {
                     icon = 'fa-volleyball'; title = 'Sport';
                 } else if (widgetType === 'widget-diario') {
                     icon = 'fa-apple-whole'; title = 'Diario';
+                } else if (widgetType === 'widget-sintonia') {
+                    icon = 'fa-heart-circle-bolt'; title = 'Sintonia';
                 }
 
                 item.el.setAttribute('data-dock-icon', icon);
@@ -335,6 +337,7 @@ async function loadGridLayout() {
                         else if (widgetType === 'widget-animali') { icon = 'fa-paw'; title = 'Animali'; }
                         else if (widgetType === 'widget-sport') { icon = 'fa-volleyball'; title = 'Sport'; }
                         else if (widgetType === 'widget-diario') { icon = 'fa-apple-whole'; title = 'Diario'; }
+                        else if (widgetType === 'widget-sintonia') { icon = 'fa-heart-circle-bolt'; title = 'Sintonia'; }
 
                         el.setAttribute('data-dock-icon', icon);
                         el.setAttribute('data-dock-title', title);
