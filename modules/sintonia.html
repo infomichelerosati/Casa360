@@ -1,0 +1,52 @@
+<!-- modules/sintonia.html -->
+<header class="flex justify-between items-center w-full mb-6 mt-2">
+    <div class="flex items-center gap-3">
+        <button onclick="navigateApp('dashboard')" class="w-10 h-10 rounded-full bg-darkblue-card text-darkblue-icon flex items-center justify-center active:scale-95 transition-transform clay-item shrink-0">
+            <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        <div>
+            <h1 class="text-3xl font-bold text-darkblue-heading mb-1">Sintonia</h1>
+            <p class="text-sm font-medium text-darkblue-icon">Benessere e relazioni</p>
+        </div>
+    </div>
+</header>
+
+<div class="flex flex-col gap-6 pb-6">
+
+    <!-- SEZIONE CHECK-IN -->
+    <section class="clay-card bg-darkblue-card rounded-clay p-6 relative overflow-hidden">
+        <div class="absolute -top-10 -right-10 w-40 h-40 bg-pink-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        
+        <h2 class="text-xl font-bold text-darkblue-heading mb-4 relative z-10">Check-in Giornaliero</h2>
+        <p class="text-sm text-darkblue-icon mb-6 relative z-10">Come ti senti oggi? Questo aiuta te e la tua famiglia a comprendersi meglio.</p>
+
+        <!-- 1. Stato Interno -->
+        <h3 class="text-sm font-bold text-darkblue-heading mb-3 uppercase tracking-wider relative z-10">Il tuo stato</h3>
+        <div class="grid grid-cols-4 gap-2 mb-8 relative z-10" id="sintonia-internal-states">
+            <!-- Renderizzati da JS -->
+        </div>
+
+        <!-- 2. Stati Relazionali -->
+        <h3 class="text-sm font-bold text-darkblue-heading mb-3 uppercase tracking-wider relative z-10">Con gli altri</h3>
+        <p class="text-xs text-darkblue-icon mb-4">Assegna un'icona a come ti senti con ogni familiare oggi.</p>
+        <div class="flex flex-col gap-3 mb-6 relative z-10" id="sintonia-relational-states">
+            <!-- Renderizzati da JS -->
+            <div class="text-center text-darkblue-icon text-sm py-4">Caricamento membri...</div>
+        </div>
+
+        <button id="btn-save-sintonia" onclick="saveSintoniaCheckin()" class="clay-btn bg-pink-500/20 text-pink-500 w-full h-14 rounded-2xl font-bold text-[1.1rem] flex items-center justify-center gap-3 active:scale-95 transition-transform relative z-10">
+            <i class="fa-solid fa-check"></i> Salva Check-in
+        </button>
+    </section>
+
+    <!-- SEZIONE GRAFICI -->
+    <section class="clay-card bg-darkblue-card rounded-clay p-6">
+        <h2 class="text-xl font-bold text-darkblue-heading mb-4">Il tuo Trend (Ultimi 7 gg)</h2>
+        <p class="text-sm text-darkblue-icon mb-6">Valori da 1 (Peggiore) a 7 (Migliore) per l'umore, e media delle relazioni.</p>
+        
+        <div class="w-full aspect-[4/3] relative">
+            <canvas id="sintonia-chart"></canvas>
+        </div>
+    </section>
+
+</div>

@@ -276,6 +276,13 @@ function initModuleLogic(moduleName) {
                 console.error("Oggetto diarioAlimentareModule non trovato.");
             }
             break;
+        case 'sintonia':
+            if (typeof initSintonia === 'function') {
+                initSintonia();
+            } else {
+                console.error("Funzione initSintonia non trovata.");
+            }
+            break;
         case 'auth':
             if (typeof initAuth === 'function') {
                 initAuth();
@@ -476,6 +483,21 @@ window.updateNotificationBadges = async function () {
                     color: 'text-red-500 bg-red-500/10 border-red-500/20'
                 });
             });
+        }
+
+        // 8. Sintonia Check-in Reminder
+        if (currentHour >= 18) { // Ricordiamo dopo le 18:00
+            const { count: sintoniaCount } = await supabase.from('sintonia_logs').select('*', { count: 'exact', head: true }).eq('member_id', user.id).eq('log_date', todayLocal);
+            if (sintoniaCount === 0 && !isDismissed('reminder-sintonia')) {
+                notifications.push({
+                    id: 'reminder-sintonia',
+                    type: 'sintonia',
+                    title: '⚡ Sintonia',
+                    msg: 'Non hai ancora fatto il check-in emotivo di oggi. Come ti senti?',
+                    icon: 'fa-heart-circle-bolt',
+                    color: 'text-pink-500 bg-pink-500/10 border-pink-500/20'
+                });
+            }
         }
 
         // --- SUGGERIMENTI PROATTIVI (AI FAMILY INSIGHTS) ---

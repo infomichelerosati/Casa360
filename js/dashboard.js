@@ -21,6 +21,7 @@ async function initDashboard() {
     fetchDashDocs();
     fetchNextSport();
     fetchFoodDiary();
+    fetchSintoniaDashboard();
 
     // Al primo caricamento, prova a scaricare il meteo basandosi sull'ultima posizione (se salvata in localStorage) o fallback Roma.
     // Il permesso geolocalizzazione verrà chiesto la prima volta che si esegue la funzione meteo vera e propria.
@@ -1415,3 +1416,109 @@ window.addDashWater = async function() {
     }
 };
 
+// ==========================================
+// SINTONIA WIDGET
+// ==========================================
+window.fetchSintoniaDashboard = async function() {
+    const listEl = document.getElementById('dash-sintonia-members-list');
+    if (!listEl) return;
+
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const familyId = await window.getUserFamilyId();
+        const todayStr = new Date().toISOString().split('T')[0];
+
+        // 1. Fetch Tutti i membri della famiglia
+        const { data: members, error: memErr } = await supabase
+            .from('family_members')
+            .select('id, name')
+            .eq('family_id', familyId);
+
+        if (memErr) throw memErr;
+
+        // 2. Fetch i log di Sintonia di oggi
+        const { data: logs, error: logErr } = await supabase
+            .from('sintonia_logs')
+            .select('member_id, internal_state, relational_states')
+            .eq('family_id', familyId)
+            .eq('log_date', todayStr);
+
+        if (logErr && logErr.code !== '42P01') throw logErr; // Ignore table not found if not created yet
+
+        // Mappa i log per member_id
+        const logMap = {};
+        if (logs) {
+            logs.forEach(l => {
+                logMap[l.member_id] = l;
+            });
+        }
+
+        const stateIcons = {
+            'Energico': '<i class="fa-solid fa-battery-full text-green-500"></i>',
+            'Stanco': '<i class="fa-solid fa-battery-quarter text-orange-500"></i>',
+            'Calmo': '<i class="fa-solid fa-seedling text-teal-500"></i>',
+            'Sotto pressione': '<i class="fa-solid fa-weight-hanging text-purple-500"></i>',
+            'Allegro': '<i class="fa-solid fa-face-smile text-yellow-500"></i>',
+            'Triste': '<i class="fa-solid fa-cloud-rain text-blue-500"></i>',
+            'Arrabbiato': '<i class="fa-solid fa-fire text-red-500"></i>'
+        };
+
+        const relationIcons = {
+            'heart': '<i class="fa-solid fa-heart text-pink-500"></i>',
+            'neutral': '<i class="fa-solid fa-circle text-gray-400 text-[10px]"></i>',
+            'lightning': '<i class="fa-solid fa-bolt text-yellow-400"></i>'
+        };
+
+        listEl.innerHTML = '';
+        
+        if (members && members.length > 0) {
+            let hasLightnings = false;
+            
+            members.forEach(member => {
+                const memberLog = logMap[member.id];
+                const intState = memberLog?.internal_state;
+                const intIcon = stateIcons[intState] || '<i class="fa-solid fa-circle-question text-gray-500"></i>';
+                
+                // Determina il "peggior" stato relazionale per questa persona (se ha messo un fulmine a qualcuno)
+                let worstRelState = 'neutral';
+                if (memberLog && memberLog.relational_states) {
+                    const values = Object.values(memberLog.relational_states);
+                    if (values.includes('lightning')) {
+                        worstRelState = 'lightning';
+                        hasLightnings = true;
+                    } else if (values.includes('heart')) {
+                        worstRelState = 'heart';
+                    }
+                }
+                const relIcon = memberLog ? relationIcons[worstRelState] : '<i class="fa-solid fa-minus text-gray-500"></i>';
+
+                const html = `
+                    <div class="clay-item bg-darkblue-base border border-darkblue-card rounded-xl p-2 flex items-center justify-between gap-3 flex-1 min-w-[45%]">
+                        <span class="text-xs font-bold text-darkblue-heading truncate">${member.name}</span>
+                        <div class="flex items-center gap-1.5 bg-darkblue-card px-2 py-1 rounded-lg">
+                            <span title="Stato: ${intState || 'Non inserito'}">${intIcon}</span>
+                            <div class="w-[1px] h-3 bg-darkblue-icon/30"></div>
+                            <span title="Relazioni: ${worstRelState}">${relIcon}</span>
+                        </div>
+                    </div>
+                `;
+                listEl.insertAdjacentHTML('beforeend', html);
+            });
+            
+            // Effetto glow se c'è un fulmine nella famiglia
+            const widgetSintonia = document.getElementById('widget-sintonia');
+            if (widgetSintonia && hasLightnings) {
+                 widgetSintonia.querySelector('.clay-card').classList.add('border-yellow-500/50', 'shadow-[0_0_15px_rgba(234,179,8,0.2)]');
+            } else if (widgetSintonia) {
+                 widgetSintonia.querySelector('.clay-card').classList.remove('border-yellow-500/50', 'shadow-[0_0_15px_rgba(234,179,8,0.2)]');
+            }
+        } else {
+            listEl.innerHTML = `<div class="clay-item p-3 rounded-xl bg-darkblue-base text-center text-darkblue-icon text-sm w-full">Nessun membro trovato.</div>`;
+        }
+
+    } catch (err) {
+        console.error("Errore fetch dashboard sintonia", err);
+    }
+};

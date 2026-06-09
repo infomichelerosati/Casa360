@@ -270,6 +270,42 @@
         </div>
     </div>
 
+    <!-- WIDGET SINTONIA -->
+    <div class="grid-stack-item" gs-id="widget-sintonia" gs-w="12" gs-h="6" gs-x="0" gs-y="36">
+        <div class="grid-stack-item-content">
+            <section class="clay-card bg-darkblue-card rounded-clay p-5 h-full flex flex-col gap-4 overflow-hidden relative">
+                <!-- Sfondo decorativo -->
+                <div class="absolute -top-4 -right-4 w-24 h-24 bg-pink-500/10 rounded-full blur-2xl z-0"></div>
+
+                <div class="flex justify-between items-end shrink-0 z-10 relative">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-darkblue-base text-pink-500 flex items-center justify-center shadow-inner">
+                            <i class="fa-solid fa-heart-circle-bolt"></i>
+                        </div>
+                        <h2 class="text-[1.1rem] font-bold text-darkblue-heading">Sintonia</h2>
+                    </div>
+                    <a href="#" class="text-xs font-bold text-darkblue-accent" onclick="event.preventDefault(); if(!window.isGridEditing) window.navigateApp('sintonia');">Storico</a>
+                </div>
+
+                <div class="flex flex-col gap-3 flex-1 z-10 relative h-full">
+                    <p class="text-xs text-darkblue-icon font-medium">Come stai oggi e come vanno le cose in casa?</p>
+                    
+                    <div id="dash-sintonia-members-list" class="flex flex-wrap gap-2 overflow-y-auto hidden-scrollbar flex-1 pb-1">
+                        <!-- Generato da JS: Lista rapida membri e loro stato -->
+                        <div class="clay-item p-3 rounded-xl bg-darkblue-base text-center text-darkblue-icon text-sm w-full">
+                            <i>Caricamento...</i>
+                        </div>
+                    </div>
+                    
+                    <button onclick="if(!window.isGridEditing) navigateApp('sintonia');" class="clay-btn bg-darkblue-base text-darkblue-heading text-xs font-bold rounded-xl py-3 active:scale-95 transition-all w-full flex items-center justify-center gap-2 group mt-auto shrink-0">
+                        <i class="fa-solid fa-pen-to-square text-lg text-darkblue-icon group-hover:text-pink-500 transition-colors"></i>
+                        <span>Fai Check-in</span>
+                    </button>
+                </div>
+            </section>
+        </div>
+    </div>
+
 </div> <!--/GRIDSTACK CONTAINER-->
 </section>
 </div>
