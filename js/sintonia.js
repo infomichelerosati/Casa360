@@ -26,10 +26,10 @@ window.setSintoniaTimeRange = function(range) {
     currentSintoniaRange = range;
     document.querySelectorAll('.sintonia-filter-btn').forEach(btn => {
         if (btn.getAttribute('onclick').includes(range)) {
-            btn.classList.add('bg-darkblue-card', 'text-darkblue-heading', 'shadow-sm');
+            btn.classList.add('bg-pink-500', 'text-white', 'shadow-sm');
             btn.classList.remove('text-darkblue-icon', 'hover:text-darkblue-heading');
         } else {
-            btn.classList.remove('bg-darkblue-card', 'text-darkblue-heading', 'shadow-sm');
+            btn.classList.remove('bg-pink-500', 'text-white', 'shadow-sm');
             btn.classList.add('text-darkblue-icon', 'hover:text-darkblue-heading');
         }
     });
