@@ -57,6 +57,18 @@
             <button class="sintonia-filter-btn flex-1 px-3 py-1.5 rounded-lg text-xs font-bold text-darkblue-icon hover:text-darkblue-heading" onclick="setSintoniaTimeRange('1y')">1 Anno</button>
             <button class="sintonia-filter-btn flex-1 px-3 py-1.5 rounded-lg text-xs font-bold text-darkblue-icon hover:text-darkblue-heading" onclick="setSintoniaTimeRange('all')">Sempre</button>
         </div>
+
+        <!-- Statistiche Benessere -->
+        <div id="sintonia-stats-container" class="grid grid-cols-2 gap-4 mb-8 hidden">
+            <div class="bg-darkblue-base/50 border border-darkblue-base p-4 rounded-xl text-center">
+                <p class="text-[10px] font-bold text-darkblue-icon uppercase tracking-wide mb-1">Indice di Benessere</p>
+                <div class="text-2xl font-black text-pink-500" id="stat-benessere">--%</div>
+            </div>
+            <div class="bg-darkblue-base/50 border border-darkblue-base p-4 rounded-xl text-center">
+                <p class="text-[10px] font-bold text-darkblue-icon uppercase tracking-wide mb-1">Indice di Malessere/Stress</p>
+                <div class="text-2xl font-black text-purple-400" id="stat-malessere">--%</div>
+            </div>
+        </div>
         
         <div id="sintonia-charts-container" class="flex flex-col gap-8 mb-8">
             <div class="text-center text-darkblue-icon text-sm py-4"><i class="fa-solid fa-circle-notch fa-spin"></i> Caricamento grafici...</div>

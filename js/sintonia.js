@@ -214,6 +214,57 @@ async function renderCheckinForm() {
     }
 }
 
+function updateSintoniaStats(logs) {
+    const container = document.getElementById('sintonia-stats-container');
+    const elBenessere = document.getElementById('stat-benessere');
+    const elMalessere = document.getElementById('stat-malessere');
+
+    if (!container || !elBenessere || !elMalessere) return;
+
+    if (!logs || logs.length === 0) {
+        container.classList.add('hidden');
+        return;
+    }
+
+    let totalItems = 0;
+    let benessereCount = 0;
+    let malessereCount = 0;
+
+    logs.forEach(log => {
+        // Valuta stato interno
+        const intOpt = INTERNAL_STATES.find(s => s.id === log.internal_state);
+        if (intOpt) {
+            totalItems++;
+            if (intOpt.value >= 5) benessereCount++; // Molto Bene, Bene
+            else if (intOpt.value <= 3) malessereCount++; // Stressato, Triste, Arrabbiato
+        }
+
+        // Valuta relazioni con i familiari
+        if (log.relational_states) {
+            Object.values(log.relational_states).forEach(rel => {
+                if (rel) {
+                    totalItems++;
+                    if (rel === 'heart') benessereCount++;
+                    else if (rel === 'lightning') malessereCount++;
+                }
+            });
+        }
+    });
+
+    if (totalItems === 0) {
+        container.classList.add('hidden');
+        return;
+    }
+
+    container.classList.remove('hidden');
+    
+    const percBen = Math.round((benessereCount / totalItems) * 100);
+    const percMal = Math.round((malessereCount / totalItems) * 100);
+
+    elBenessere.textContent = `${percBen}%`;
+    elMalessere.textContent = `${percMal}%`;
+}
+
 async function generateSintoniaUIForGlobal(familyId, userId) {
     const container = document.getElementById('global-sintonia-content');
     if (!container) return;
@@ -520,6 +571,9 @@ async function renderSintoniaChart() {
         
         // Render Diario
         renderSintoniaDiary(logs, members);
+
+        // Aggiorna Statistiche
+        updateSintoniaStats(logs);
 
         const labels = [];
         const personalTrend = [];
