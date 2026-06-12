@@ -256,6 +256,26 @@
         </div>
     </div>
 
+    <!-- Global Sintonia Check-in Modal -->
+    <div id="modal-global-sintonia"
+        class="fixed inset-0 bg-darkblue-base/95 z-[120] flex items-center justify-center transition-opacity duration-300 opacity-0 pointer-events-none px-4 py-8 overflow-y-auto">
+        <div class="clay-card bg-darkblue-card w-full max-w-md rounded-clay p-6 transform scale-95 transition-transform duration-300 flex flex-col my-auto h-auto max-h-full overflow-y-auto scrollbar-hide">
+            <h3 class="text-2xl font-bold text-darkblue-heading mb-1 text-center">Come ti senti?</h3>
+            <p id="global-sintonia-subtitle" class="text-sm text-darkblue-icon text-center mb-6">Check-in della giornata</p>
+            
+            <div id="global-sintonia-content" class="flex flex-col gap-6">
+                <!-- Verrà popolato dinamicamente da js/sintonia.js -->
+            </div>
+            
+            <div class="flex gap-4 w-full mt-8">
+                <button id="btn-global-sintonia-skip" onclick="skipGlobalSintonia()"
+                    class="clay-btn bg-darkblue-base w-full h-12 rounded-3xl font-bold text-darkblue-text flex items-center justify-center active:scale-95 transition-transform text-xs">Fallo più tardi</button>
+                <button id="btn-global-sintonia-save" onclick="saveGlobalSintonia()"
+                    class="clay-btn bg-pink-500/20 text-pink-500 w-full h-12 rounded-3xl font-bold flex items-center justify-center active:scale-95 transition-transform text-sm"><i class="fa-solid fa-check mr-2"></i> Salva</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Global Toast / Realtime Notification Container -->
     <div id="toast-container"
         class="fixed top-4 left-0 right-0 z-[100] flex flex-col items-center pointer-events-none gap-2 px-4">

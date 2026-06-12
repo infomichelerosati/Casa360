@@ -102,6 +102,9 @@ async function renderApp(session) {
             if (typeof window.updateNotificationBadges === 'function') {
                 window.updateNotificationBadges();
             }
+            if (typeof window.checkAndShowGlobalSintonia === 'function') {
+                window.checkAndShowGlobalSintonia();
+            }
         }, 1000);
     }
 }

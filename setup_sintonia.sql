@@ -15,11 +15,17 @@ CREATE TABLE public.sintonia_logs (
     -- Formato es: { "uuid-membro-1": "heart", "uuid-membro-2": "lightning", "uuid-membro-3": "neutral" }
     relational_states JSONB DEFAULT '{}'::jsonb,
     
+    -- Fascia oraria del giorno (es: 'mattina', 'pomeriggio', 'sera')
+    time_slot VARCHAR(20) NOT NULL DEFAULT 'mattina',
+    
+    -- Note opzionali per ogni stato (es: { "internal": "Oggi mi sento bene", "uuid-membro-1": "Abbiamo litigato" })
+    notes JSONB DEFAULT '{}'::jsonb,
+    
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
 
-    -- Un utente può avere un solo log al giorno (che verrà aggiornato se cambia idea)
-    UNIQUE(family_id, member_id, log_date)
+    -- Un utente può avere un log per fascia oraria al giorno
+    UNIQUE(family_id, member_id, log_date, time_slot)
 );
 
 -- Indici per ottimizzare le query
