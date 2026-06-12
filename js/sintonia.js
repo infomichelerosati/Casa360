@@ -856,7 +856,7 @@ window.exportSintoniaPDF = async function() {
 
         const opt = {
             margin:       10,
-            filename:     `Diario_Sintonia_${me ? me.name.replace(/\\s+/g, '_') : 'Utente'}_${new Date().toLocaleDateString('it-IT').replace(/\\//g, '-')}.pdf`,
+            filename:     `Diario_Sintonia_${me ? me.name.replaceAll(' ', '_') : 'Utente'}_${new Date().toLocaleDateString('it-IT').replaceAll('/', '-')}.pdf`,
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { scale: 2, useCORS: true, logging: false },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
