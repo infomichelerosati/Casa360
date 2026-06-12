@@ -782,7 +782,7 @@ window.exportSintoniaPDF = async function() {
                 html += `
                     <div style="background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; text-align: center;">
                         <h3 style="margin: 0 0 10px; font-size: 12px; color: #64748b; text-transform: uppercase;">${title}</h3>
-                        <img src="${imgData}" style="max-width: 100%; height: auto; max-height: 200px;" />
+                        <img src="${imgData}" style="width: 100%; height: auto;" />
                     </div>
                 `;
             });
