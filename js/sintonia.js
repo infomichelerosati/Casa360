@@ -214,55 +214,199 @@ async function renderCheckinForm() {
     }
 }
 
-function updateSintoniaStats(logs) {
+function updateSintoniaStats(logs, members) {
     const container = document.getElementById('sintonia-stats-container');
-    const elBenessere = document.getElementById('stat-benessere');
-    const elMalessere = document.getElementById('stat-malessere');
-
-    if (!container || !elBenessere || !elMalessere) return;
+    if (!container) return;
 
     if (!logs || logs.length === 0) {
         container.classList.add('hidden');
         return;
     }
 
-    let totalItems = 0;
-    let benessereCount = 0;
-    let malessereCount = 0;
+    container.classList.remove('hidden');
+    container.innerHTML = ''; // Svuota il contenitore
 
-    logs.forEach(log => {
-        // Valuta stato interno
+    // Statistiche Personali
+    let personalTotal = 0;
+    let personalBenessere = 0;
+    let personalMalessere = 0;
+
+    // Statistiche Relazionali per ogni membro
+    const relStats = {};
+    if (members) {
+        members.forEach(m => {
+            relStats[m.id] = { name: m.name, total: 0, benessere: 0, malessere: 0 };
+        });
+    }
+
+    // Ordiniamo per data/slot per il carry-forward corretto
+    const sortedLogs = [...logs];
+    const slotOrder = { 'mattina': 1, 'pomeriggio': 2, 'sera': 3 };
+    sortedLogs.sort((a, b) => {
+        if (a.log_date !== b.log_date) return a.log_date.localeCompare(b.log_date);
+        return slotOrder[a.time_slot] - slotOrder[b.time_slot];
+    });
+
+    let lastRelState = {};
+
+    sortedLogs.forEach(log => {
+        // Valuta stato interno personale
         const intOpt = INTERNAL_STATES.find(s => s.id === log.internal_state);
         if (intOpt) {
-            totalItems++;
-            if (intOpt.value >= 5) benessereCount++; // Molto Bene, Bene
-            else if (intOpt.value <= 3) malessereCount++; // Stressato, Triste, Arrabbiato
+            personalTotal++;
+            if (intOpt.value >= 5) personalBenessere++; // Molto Bene, Bene, Indifferente
+            else if (intOpt.value <= 3) personalMalessere++; // Stressato, Triste, Arrabbiato
+            // "Stanco" (4) è ignorato ai fini di benessere/malessere, lo lasciamo come neutro.
         }
 
-        // Valuta relazioni con i familiari
-        if (log.relational_states) {
-            Object.values(log.relational_states).forEach(rel => {
-                if (rel) {
-                    totalItems++;
-                    if (rel === 'heart') benessereCount++;
-                    else if (rel === 'lightning') malessereCount++;
+        // Valuta relazioni con i familiari (con carry-forward)
+        if (log.relational_states && members) {
+            members.forEach(m => {
+                const valStr = log.relational_states[m.id];
+                if (!valStr) return; // Se non ha risposto per questo membro, ignora
+
+                let effectiveStr = valStr;
+                if (valStr === 'neutral' && lastRelState[m.id]) {
+                    effectiveStr = lastRelState[m.id];
+                } else if (valStr === 'heart' || valStr === 'lightning') {
+                    lastRelState[m.id] = valStr;
+                }
+
+                if (relStats[m.id]) {
+                    relStats[m.id].total++;
+                    if (effectiveStr === 'heart') relStats[m.id].benessere++;
+                    else if (effectiveStr === 'lightning') relStats[m.id].malessere++;
                 }
             });
         }
     });
 
-    if (totalItems === 0) {
-        container.classList.add('hidden');
-        return;
+    // Funzione helper per generare l'HTML di un riquadro
+    const generateStatHTML = (title, countBenessere, countMalessere, total) => {
+        let percBen = 0;
+        let percMal = 0;
+        
+        // Se non ci sono dati o tutti sono "Neutri" senza stato precedente
+        const valids = countBenessere + countMalessere;
+        if (valids > 0) {
+            percBen = Math.round((countBenessere / valids) * 100);
+            percMal = Math.round((countMalessere / valids) * 100);
+        } else if (total > 0) {
+            // Solo neutri
+            percBen = 50;
+            percMal = 50;
+        }
+
+        return `
+            <div class="bg-darkblue-base/50 border border-darkblue-base p-4 rounded-xl flex flex-col gap-2">
+                <p class="text-[10px] font-bold text-darkblue-icon uppercase tracking-wide text-center">${title}</p>
+                <div class="flex justify-between items-center gap-2">
+                    <div class="text-center flex-1">
+                        <div class="text-xs text-pink-500/80 mb-1">Benessere</div>
+                        <div class="text-xl font-black text-pink-500">${total > 0 ? percBen + '%' : '--'}</div>
+                    </div>
+                    <div class="w-px h-8 bg-darkblue-base"></div>
+                    <div class="text-center flex-1">
+                        <div class="text-xs text-purple-400/80 mb-1">Stress</div>
+                        <div class="text-xl font-black text-purple-400">${total > 0 ? percMal + '%' : '--'}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    };
+
+    // Aggiungi box Personale
+    container.innerHTML += generateStatHTML('Umore Personale', personalBenessere, personalMalessere, personalTotal);
+
+    // Aggiungi box per ogni membro
+    if (members) {
+        members.forEach(m => {
+            const st = relStats[m.id];
+            if (st.total > 0) {
+                container.innerHTML += generateStatHTML(`Relazione con ${st.name}`, st.benessere, st.malessere, st.total);
+            }
+        });
     }
 
-    container.classList.remove('hidden');
-    
-    const percBen = Math.round((benessereCount / totalItems) * 100);
-    const percMal = Math.round((malessereCount / totalItems) * 100);
+    // --- Calcolo Insight Testuali (Opzione 2) ---
+    const insightsContainer = document.getElementById('sintonia-insights-container');
+    if (insightsContainer) {
+        insightsContainer.innerHTML = '';
+        const insights = [];
 
-    elBenessere.textContent = `${percBen}%`;
-    elMalessere.textContent = `${percMal}%`;
+        if (members) {
+            members.forEach(m => {
+                let negativePersonalMatches = 0;
+                let negativePersonalTotal = 0;
+                let positivePersonalMatches = 0;
+                let positivePersonalTotal = 0;
+
+                // Ri-analizziamo i log (o lo facevamo prima, ma facciamolo qui per pulizia)
+                let tempLastRel = null;
+                sortedLogs.forEach(log => {
+                    const valStr = log.relational_states ? log.relational_states[m.id] : null;
+                    if (!valStr) return;
+
+                    let effectiveStr = valStr;
+                    if (valStr === 'neutral' && tempLastRel) {
+                        effectiveStr = tempLastRel;
+                    } else if (valStr === 'heart' || valStr === 'lightning') {
+                        tempLastRel = valStr;
+                    }
+
+                    const intOpt = INTERNAL_STATES.find(s => s.id === log.internal_state);
+                    if (intOpt) {
+                        // Umore negativo (Stanco, Pressato, Triste, Arrabbiato -> <= 4)
+                        if (intOpt.value <= 4) {
+                            negativePersonalTotal++;
+                            if (effectiveStr === 'lightning') negativePersonalMatches++;
+                        }
+                        // Umore positivo (Calmo, Allegro, Energico -> >= 6)
+                        if (intOpt.value >= 6) {
+                            positivePersonalTotal++;
+                            if (effectiveStr === 'heart') positivePersonalMatches++;
+                        }
+                    }
+                });
+
+                // Generiamo insight se abbiamo dati sufficienti (es. almeno 3 casi)
+                if (negativePersonalTotal >= 3) {
+                    const perc = Math.round((negativePersonalMatches / negativePersonalTotal) * 100);
+                    if (perc >= 60) {
+                        insights.push(`
+                            <div class="bg-darkblue-base/50 border border-purple-500/30 p-3 rounded-lg flex gap-3 items-start">
+                                <i class="fa-solid fa-lightbulb text-yellow-400 mt-1"></i>
+                                <p class="text-xs text-darkblue-heading leading-relaxed">
+                                    Il <strong>${perc}%</strong> delle volte in cui sei stanco, stressato o giù di morale, registri anche un po' di tensione o distacco con <strong>${m.name}</strong>. Il tuo umore influisce molto su questa relazione!
+                                </p>
+                            </div>
+                        `);
+                    }
+                }
+
+                if (positivePersonalTotal >= 3) {
+                    const perc = Math.round((positivePersonalMatches / positivePersonalTotal) * 100);
+                    if (perc >= 70) {
+                        insights.push(`
+                            <div class="bg-darkblue-base/50 border border-pink-500/30 p-3 rounded-lg flex gap-3 items-start">
+                                <i class="fa-solid fa-sparkles text-pink-400 mt-1"></i>
+                                <p class="text-xs text-darkblue-heading leading-relaxed">
+                                    Wow! Il <strong>${perc}%</strong> delle volte in cui ti senti bene ed energico, la tua relazione con <strong>${m.name}</strong> è al top. Condividi tanta positività!
+                                </p>
+                            </div>
+                        `);
+                    }
+                }
+            });
+        }
+
+        if (insights.length > 0) {
+            insightsContainer.classList.remove('hidden');
+            insightsContainer.innerHTML = insights.join('');
+        } else {
+            insightsContainer.classList.add('hidden');
+        }
+    }
 }
 
 async function generateSintoniaUIForGlobal(familyId, userId) {
@@ -573,7 +717,7 @@ async function renderSintoniaChart() {
         renderSintoniaDiary(logs, members);
 
         // Aggiorna Statistiche
-        updateSintoniaStats(logs);
+        updateSintoniaStats(logs, members);
 
         const labels = [];
         const personalTrend = [];
@@ -588,6 +732,9 @@ async function renderSintoniaChart() {
                 return slotOrder[a.time_slot] - slotOrder[b.time_slot];
             });
 
+            // Stato precedente per carry-forward
+            let lastRelState = {};
+
             logs.forEach(log => {
                 const d = new Date(log.log_date);
                 const dayLabel = d.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
@@ -600,7 +747,16 @@ async function renderSintoniaChart() {
                 if (members) {
                     members.forEach(m => {
                         const valStr = log.relational_states ? log.relational_states[m.id] : null;
-                        const relOpt = RELATIONAL_OPTIONS.find(o => o.id === valStr);
+                        
+                        let effectiveStr = valStr;
+                        // Carry-forward se neutro e abbiamo uno stato precedente
+                        if (valStr === 'neutral' && lastRelState[m.id]) {
+                            effectiveStr = lastRelState[m.id];
+                        } else if (valStr === 'heart' || valStr === 'lightning') {
+                            lastRelState[m.id] = valStr; // Memorizza ultimo stato non neutro
+                        }
+
+                        const relOpt = RELATIONAL_OPTIONS.find(o => o.id === effectiveStr);
                         relationalTrends[m.id].push(relOpt ? relOpt.value : null);
                     });
                 }
@@ -619,7 +775,7 @@ async function renderSintoniaChart() {
         Chart.defaults.color = '#8a9ab4';
         Chart.defaults.font.family = 'Inter, sans-serif';
 
-        const createChart = (id, title, color, dataArr, maxVal, isDash = false) => {
+        const createChart = (id, title, color, dataArr, maxVal, isDash = false, secondaryDataArr = null, secondaryMaxVal = null) => {
             const wrapper = document.createElement('div');
             wrapper.innerHTML = `
                 <h3 class="text-sm font-bold text-darkblue-heading mb-2 flex items-center gap-2">
@@ -632,26 +788,46 @@ async function renderSintoniaChart() {
             `;
             container.appendChild(wrapper);
             
+            const datasets = [{
+                label: title,
+                data: dataArr,
+                borderColor: color,
+                backgroundColor: isDash ? 'transparent' : color + '1a',
+                borderWidth: isDash ? 2 : 3,
+                borderDash: isDash ? [5, 5] : [],
+                tension: 0.2,
+                fill: !isDash,
+                pointBackgroundColor: '#1a2235',
+                pointBorderColor: color,
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                spanGaps: true,
+                yAxisID: 'y'
+            }];
+
+            if (secondaryDataArr) {
+                datasets.unshift({ // Mettiamo sotto il grafico principale
+                    label: 'Umore Personale',
+                    data: secondaryDataArr,
+                    borderColor: '#3b82f640', // Blu semi-trasparente
+                    backgroundColor: '#3b82f61a', // Blu molto trasparente
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    tension: 0.4, // Curva morbida
+                    fill: true,
+                    pointRadius: 0, // Nascondi i punti
+                    pointHoverRadius: 0,
+                    spanGaps: true,
+                    yAxisID: 'y1'
+                });
+            }
+
             const canvas = document.getElementById(id);
             const chart = new Chart(canvas, {
                 type: 'line',
                 data: {
                     labels: labels,
-                    datasets: [{
-                        label: title,
-                        data: dataArr,
-                        borderColor: color,
-                        backgroundColor: isDash ? 'transparent' : color + '1a',
-                        borderWidth: isDash ? 2 : 3,
-                        borderDash: isDash ? [5, 5] : [],
-                        tension: 0.2, // Minore tensione per mostrare bene i punti
-                        fill: !isDash,
-                        pointBackgroundColor: '#1a2235',
-                        pointBorderColor: color,
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
-                        spanGaps: true
-                    }]
+                    datasets: datasets
                 },
                 options: {
                     responsive: true,
@@ -664,7 +840,23 @@ async function renderSintoniaChart() {
                         }
                     },
                     scales: {
-                        y: { min: 1, max: maxVal, ticks: { stepSize: 1 }, grid: { color: '#334155', drawBorder: false } },
+                        y: { 
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            min: 1, 
+                            max: maxVal, 
+                            ticks: { stepSize: 1 }, 
+                            grid: { color: '#334155', drawBorder: false } 
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: false, // Nascondiamo i numeri per non confondere
+                            position: 'right',
+                            min: 1,
+                            max: secondaryMaxVal || 8,
+                            grid: { drawOnChartArea: false }
+                        },
                         x: { grid: { display: false, drawBorder: false }, ticks: { autoSkip: true, maxTicksLimit: 12 } }
                     }
                 }
@@ -676,7 +868,7 @@ async function renderSintoniaChart() {
 
         if (members) {
             members.forEach(m => {
-                createChart('chart-rel-' + m.id, 'Relazione con ' + m.name, '#ec4899', relationalTrends[m.id], 3, true);
+                createChart('chart-rel-' + m.id, 'Relazione con ' + m.name, '#ec4899', relationalTrends[m.id], 3, false, personalTrend, 8);
             });
         }
         
