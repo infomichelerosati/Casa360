@@ -651,7 +651,7 @@ window.updateNotificationBadges = async function () {
         const spesaBadge = document.getElementById('nav-badge-spesa');
         if (spesaBadge) {
             // Conta quante notifiche di tipo "spesa" esistono
-            const constSpesa = notifications.filter(n => n.type === 'spesa').length;
+            const constSpesa = window.globalNotifications.filter(n => n.type === 'spesa').length;
             if (constSpesa > 0) {
                 spesaBadge.classList.remove('hidden');
             } else {
@@ -663,23 +663,23 @@ window.updateNotificationBadges = async function () {
         const bellNum = document.getElementById('dash-badge-bell-num');
         
         if (bellBadge && bellNum) {
-            const count = notifications.length;
+            const count = window.globalNotifications.length;
             if (count > 0) {
                 bellNum.textContent = count;
                 bellBadge.classList.remove('hidden');
                 
                 // Determina il colore e l'importanza
-                const hasCritical = notifications.some(n => ['spesa', 'documenti', 'salute'].includes(n.type));
-                const hasSportsOrPets = notifications.some(n => ['sport', 'animali'].includes(n.type));
+                const hasCritical = window.globalNotifications.some(n => ['spesa', 'documenti', 'salute'].includes(n.type));
+                const hasSportsOrPets = window.globalNotifications.some(n => ['sport', 'animali'].includes(n.type));
                 
                 // Rimuovi classi precedenti
-                bellBadge.classList.remove('bg-red-500', 'bg-yellow-500', 'bg-blue-500', 'animate-pulse');
+                bellBadge.classList.remove('bg-red-500', 'bg-yellow-500', 'bg-orange-500', 'bg-blue-500', 'animate-pulse');
                 
                 if (hasCritical) {
                     bellBadge.classList.add('bg-red-500', 'animate-pulse');
                 } else if (hasSportsOrPets) {
                     bellBadge.classList.add('bg-orange-500');
-                } else if (notifications.some(n => n.isSuggestion)) {
+                } else if (window.globalNotifications.some(n => n.isSuggestion)) {
                     bellBadge.classList.add('bg-yellow-500');
                 } else {
                     bellBadge.classList.add('bg-blue-500');
