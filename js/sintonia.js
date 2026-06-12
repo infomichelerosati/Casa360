@@ -709,25 +709,165 @@ function renderSintoniaDiary(logs, members) {
     container.innerHTML = html;
 }
 
-window.exportSintoniaPDF = function() {
-    const element = document.getElementById('sintonia-export-area');
-    if (!element) return;
-    
-    // Mostriamo un toast per far capire che sta lavorando
-    window.showToast("Generazione PDF in corso...", "success");
+window.exportSintoniaPDF = async function() {
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        const familyId = await window.getUserFamilyId();
+        
+        // Mostriamo un toast per far capire che sta lavorando
+        window.showToast("Generazione PDF in corso...", "success");
 
-    const opt = {
-        margin:       10,
-        filename:     `Diario_Sintonia_${new Date().toLocaleDateString('it-IT')}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#1a2235' },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
+        // Fetch dati per il report
+        const { data: members } = await supabase.from('family_members').select('id, name').eq('family_id', familyId);
+        const me = members.find(m => m.id === user.id);
+        const otherMembers = members.filter(m => m.id !== user.id);
 
-    html2pdf().set(opt).from(element).save().then(() => {
+        let query = supabase.from('sintonia_logs').select('*').eq('family_id', familyId).eq('member_id', user.id);
+        const now = new Date();
+        if (currentSintoniaRange === '7d') {
+            const d = new Date(now); d.setDate(d.getDate() - 6);
+            query = query.gte('log_date', d.toLocaleDateString('en-CA'));
+        } else if (currentSintoniaRange === '30d') {
+            const d = new Date(now); d.setDate(d.getDate() - 29);
+            query = query.gte('log_date', d.toLocaleDateString('en-CA'));
+        } else if (currentSintoniaRange === '1y') {
+            const d = new Date(now); d.setFullYear(d.getFullYear() - 1);
+            query = query.gte('log_date', d.toLocaleDateString('en-CA'));
+        }
+        
+        const { data: logs, error } = await query.order('log_date', { ascending: false });
+        if (error) throw error;
+
+        // Ordiniamo anche per slot orario decrescente per il diario
+        if (logs) {
+            const slotOrder = { 'mattina': 1, 'pomeriggio': 2, 'sera': 3 };
+            logs.sort((a, b) => {
+                if (a.log_date !== b.log_date) return b.log_date.localeCompare(a.log_date);
+                return slotOrder[b.time_slot] - slotOrder[a.time_slot];
+            });
+        }
+
+        // Costruzione del Template HTML per il PDF (Stile Professionale)
+        const reportContainer = document.createElement('div');
+        reportContainer.style.padding = '40px';
+        reportContainer.style.backgroundColor = '#ffffff';
+        reportContainer.style.color = '#1a2235';
+        reportContainer.style.fontFamily = "'Helvetica', 'Arial', sans-serif";
+
+        let html = `
+            <!-- Header Report -->
+            <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #ec4899; padding-bottom: 20px; margin-bottom: 30px;">
+                <div>
+                    <h1 style="margin: 0; color: #ec4899; font-size: 28px; letter-spacing: -1px;">FAMILY OS</h1>
+                    <p style="margin: 5px 0 0; font-weight: 800; color: #64748b; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Diario di Sintonia e Benessere</p>
+                </div>
+                <div style="text-align: right; color: #64748b; font-size: 11px;">
+                    <p style="margin: 0;">Data Generazione: <strong>${new Date().toLocaleDateString('it-IT')}</strong></p>
+                    <p style="margin: 5px 0 0;">Utente: <strong style="color: #1a2235; font-size: 16px;">${me ? me.name : 'Sconosciuto'}</strong></p>
+                </div>
+            </div>
+        `;
+
+        // Aggiunta Grafici come immagini
+        if (sintoniaChartInstances && sintoniaChartInstances.length > 0) {
+            html += `
+                <div style="margin-bottom: 30px; page-break-inside: avoid;">
+                    <h2 style="font-size: 16px; color: #ec4899; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; margin-bottom: 15px;">Andamento e Trend</h2>
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 20px;">
+            `;
+            
+            sintoniaChartInstances.forEach((chart, index) => {
+                const imgData = chart.toBase64Image();
+                const title = chart.data.datasets[0].label || 'Grafico';
+                html += `
+                    <div style="background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; text-align: center;">
+                        <h3 style="margin: 0 0 10px; font-size: 12px; color: #64748b; text-transform: uppercase;">${title}</h3>
+                        <img src="${imgData}" style="max-width: 100%; height: auto; max-height: 200px;" />
+                    </div>
+                `;
+            });
+            html += `</div></div>`;
+        }
+
+        // Storico Diario
+        html += `
+            <div style="margin-bottom: 30px;">
+                <h2 style="font-size: 16px; color: #ec4899; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; margin-bottom: 15px;">Storico Diario Familiare</h2>
+        `;
+
+        if (logs && logs.length > 0) {
+            logs.forEach(log => {
+                const d = new Date(log.log_date);
+                const dayLabel = d.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                const intOpt = INTERNAL_STATES.find(s => s.id === log.internal_state);
+                const slotLabel = getSlotLabel(log.time_slot);
+
+                // Mostriamo il blocco solo se c'è un'emozione definita o note
+                let hasNotes = (log.notes && log.notes.internal && log.notes.internal.trim() !== '') || 
+                               (log.notes && log.notes.relations && Object.values(log.notes.relations).some(n => n && n.trim() !== ''));
+
+                html += `
+                    <div style="margin-bottom: 15px; padding: 10px; border-left: 3px solid ${intOpt ? intOpt.color.replace('text-', '') : '#cbd5e1'}; background: #f8fafc; page-break-inside: avoid;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span style="font-size: 10px; font-weight: bold; color: #ec4899; text-transform: uppercase;">${slotLabel}</span>
+                            <span style="font-size: 10px; color: #64748b;">${dayLabel}</span>
+                        </div>
+                        <h4 style="margin: 0 0 5px; font-size: 14px; color: #1a2235;">Stato Personale: ${intOpt ? intOpt.label : 'Non definito'}</h4>
+                        ${log.notes && log.notes.internal && log.notes.internal.trim() !== '' ? `<p style="margin: 0 0 10px; font-size: 12px; font-style: italic; color: #475569;">"${log.notes.internal}"</p>` : ''}
+                `;
+
+                if (otherMembers && otherMembers.length > 0) {
+                    html += `<div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">`;
+                    otherMembers.forEach(m => {
+                        const valStr = log.relational_states ? log.relational_states[m.id] : null;
+                        const relOpt = RELATIONAL_OPTIONS.find(o => o.id === valStr);
+                        const rNote = log.notes && log.notes.relations ? log.notes.relations[m.id] : null;
+                        
+                        let relEmoji = '';
+                        if (valStr === 'heart') relEmoji = '❤️';
+                        else if (valStr === 'lightning') relEmoji = '⚡';
+                        else relEmoji = '⚪';
+
+                        html += `<div style="margin-bottom: 5px;">
+                            <span style="font-size: 12px; font-weight: bold; color: #334155;">Con ${m.name}: ${relEmoji}</span>
+                            ${rNote && rNote.trim() !== '' ? `<p style="margin: 2px 0 0 10px; font-size: 11px; font-style: italic; color: #64748b;">"${rNote}"</p>` : ''}
+                        </div>`;
+                    });
+                    html += `</div>`;
+                }
+
+                html += `</div>`;
+            });
+        } else {
+            html += `<p style="font-style: italic; color: #94a3b8; font-size: 12px;">Nessun check-in registrato per questo periodo.</p>`;
+        }
+        
+        html += `</div>`; // Fine storico
+
+        // Footer
+        html += `
+            <div style="margin-top: 60px; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+                <p style="margin: 0; font-size: 10px; color: #94a3b8;">Family OS - Piattaforma di Gestione Familiare Integrata</p>
+                <p style="margin: 5px 0 0; font-size: 9px; color: #cbd5e1;">Diario personale generato automaticamente in base alle registrazioni di Sintonia.</p>
+            </div>
+        `;
+
+        reportContainer.innerHTML = html;
+
+        const opt = {
+            margin:       10,
+            filename:     `Diario_Sintonia_${me ? me.name.replace(/\\s+/g, '_') : 'Utente'}_${new Date().toLocaleDateString('it-IT').replace(/\\//g, '-')}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true, logging: false },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+        };
+
+        await html2pdf().set(opt).from(reportContainer).save();
         window.showToast("PDF Scaricato!", "success");
-    }).catch(err => {
-        console.error(err);
+
+    } catch (err) {
+        console.error("Errore export report sintonia:", err);
         window.showToast("Errore durante l'esportazione", "error");
-    });
+    }
 };
