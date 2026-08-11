@@ -196,11 +196,9 @@ function renderMjView() {
     if (mjCurrentView === 'day') {
         renderMjTimeline(container);
     } else if (mjCurrentView === 'week') {
-        container.innerHTML = `<div class="p-4 text-center text-darkblue-icon">Vista settimanale in arrivo...</div>`;
-        document.getElementById('mj-daily-summary').classList.add('hidden');
+        renderMjWeekView(container);
     } else if (mjCurrentView === 'month') {
-        container.innerHTML = `<div class="p-4 text-center text-darkblue-icon">Vista mensile in arrivo...</div>`;
-        document.getElementById('mj-daily-summary').classList.add('hidden');
+        renderMjMonthView(container);
     }
 }
 
@@ -332,6 +330,124 @@ function renderMjTimeline(container) {
     if (Object.keys(jobBreakdown).length === 0) {
         breakdownEl.innerHTML = `<p class="text-xs text-darkblue-icon italic p-2 text-center">Nessun turno registrato oggi.</p>`;
     }
+}
+
+}
+
+function renderMjWeekView(container) {
+    document.getElementById('mj-daily-summary').classList.add('hidden');
+    
+    let html = `<div class="grid grid-cols-7 gap-1 h-full min-h-[400px]">`;
+    const { start } = getWeekBounds(mjCurrentDate);
+    
+    for (let i = 0; i < 7; i++) {
+        let currentDay = new Date(start);
+        currentDay.setDate(currentDay.getDate() + i);
+        let dateStr = formatDateISO(currentDay);
+        
+        // Cerca turni per questo giorno
+        let dayShifts = mjShifts.filter(s => s.shift_date === dateStr);
+        let totalMins = 0;
+        
+        let dayHtml = `<div class="flex flex-col bg-darkblue-base rounded-xl overflow-hidden h-full">`;
+        dayHtml += `<div class="bg-darkblue-card/50 text-center py-2 border-b border-darkblue-card">
+            <p class="text-[10px] uppercase font-bold text-darkblue-icon">${currentDay.toLocaleDateString('it-IT', {weekday: 'short'})}</p>
+            <p class="text-sm font-bold text-darkblue-heading">${currentDay.getDate()}</p>
+        </div>`;
+        
+        dayHtml += `<div class="flex-1 p-1 space-y-1 overflow-y-auto hidden-scrollbar">`;
+        
+        dayShifts.forEach(shift => {
+            const startM = timeToMinutes(shift.start_time);
+            let endM = timeToMinutes(shift.end_time);
+            if (endM < startM) endM += 24*60;
+            totalMins += (endM - startM);
+            
+            const jobColor = shift.mj_jobs?.color || '#3b82f6';
+            const jobTitle = shift.mj_jobs?.title || 'Job';
+            
+            dayHtml += `<div class="rounded p-1 cursor-pointer active:scale-95 transition-transform" style="background-color: ${jobColor}30; border-left: 2px solid ${jobColor}" onclick="mjJumpToDate('${dateStr}')">
+                <p class="text-[9px] font-bold text-white truncate">${jobTitle}</p>
+                <p class="text-[8px] text-white/80">${shift.start_time.substring(0,5)}-${shift.end_time.substring(0,5)}</p>
+            </div>`;
+        });
+        
+        dayHtml += `</div>`;
+        
+        if (totalMins > 0) {
+            dayHtml += `<div class="bg-darkblue-card text-center py-1 border-t border-darkblue-base">
+                <span class="text-[9px] font-bold text-darkblue-heading">${formatMinutes(totalMins)}</span>
+            </div>`;
+        }
+        
+        dayHtml += `</div>`;
+        html += dayHtml;
+    }
+    html += `</div>`;
+    container.innerHTML = html;
+}
+
+function renderMjMonthView(container) {
+    document.getElementById('mj-daily-summary').classList.add('hidden');
+    
+    let html = `<div class="flex flex-col h-full min-h-[400px]">`;
+    // Header giorni settimana
+    html += `<div class="grid grid-cols-7 gap-1 mb-2">`;
+    const days = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+    days.forEach(d => {
+        html += `<div class="text-center text-[10px] font-bold text-darkblue-icon uppercase">${d}</div>`;
+    });
+    html += `</div>`;
+    
+    html += `<div class="grid grid-cols-7 gap-1 flex-1">`;
+    
+    const year = mjCurrentDate.getFullYear();
+    const month = mjCurrentDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    
+    let startDayOfWeek = firstDay.getDay() - 1;
+    if (startDayOfWeek === -1) startDayOfWeek = 6; // Domenica = 6
+    
+    // Celle vuote prima del 1°
+    for (let i = 0; i < startDayOfWeek; i++) {
+        html += `<div class="bg-transparent rounded-xl"></div>`;
+    }
+    
+    // Giorni del mese
+    for (let d = 1; d <= lastDay.getDate(); d++) {
+        let currentDay = new Date(year, month, d);
+        let dateStr = formatDateISO(currentDay);
+        
+        let dayShifts = mjShifts.filter(s => s.shift_date === dateStr);
+        let hasShifts = dayShifts.length > 0;
+        
+        let isToday = dateStr === formatDateISO(new Date());
+        let todayClass = isToday ? 'border border-darkblue-accent' : '';
+        let bgClass = hasShifts ? 'bg-darkblue-card cursor-pointer hover:bg-darkblue-card/80 active:scale-95 transition-transform shadow-sm' : 'bg-darkblue-base/50';
+        
+        html += `<div class="${bgClass} ${todayClass} rounded-xl p-1 flex flex-col items-center min-h-[50px]" ${hasShifts ? `onclick="mjJumpToDate('${dateStr}')"` : ''}>
+            <span class="text-xs font-bold ${isToday ? 'text-darkblue-accent' : 'text-darkblue-heading'} mb-1">${d}</span>
+            <div class="flex flex-wrap justify-center gap-0.5">`;
+            
+        // Pallini/Badge colorati per ogni lavoro diverso nel giorno
+        if (hasShifts) {
+            let colors = [...new Set(dayShifts.map(s => s.mj_jobs?.color || '#3b82f6'))];
+            colors.forEach(c => {
+                html += `<div class="w-1.5 h-1.5 rounded-full" style="background-color: ${c}"></div>`;
+            });
+        }
+        
+        html += `</div></div>`;
+    }
+    
+    html += `</div></div>`;
+    container.innerHTML = html;
+}
+
+function mjJumpToDate(dateStr) {
+    mjCurrentDate = new Date(dateStr);
+    setMjView('day');
 }
 
 // ---------------------------------------------------------
