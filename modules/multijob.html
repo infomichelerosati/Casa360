@@ -1,0 +1,165 @@
+<!-- modules/multijob.html -->
+
+<header class="flex justify-between items-center w-full mb-4 mt-2">
+    <div>
+        <h1 class="text-3xl font-bold text-darkblue-heading pl-2 mb-1">💼 Multi JOB</h1>
+        <p class="text-sm font-medium text-darkblue-accent pl-2">Gestione Lavori e Turni</p>
+    </div>
+    <div class="flex gap-2">
+        <button id="btn-mj-jobs" onclick="openMjJobsModal()"
+            class="clay-btn bg-darkblue-card text-darkblue-icon w-12 h-12 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform">
+            <i class="fa-solid fa-list-check text-xl"></i>
+        </button>
+        <button id="btn-add-mj-shift" onclick="openMjShiftModal()"
+            class="clay-btn bg-darkblue-accent text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform">
+            <i class="fa-solid fa-plus text-xl"></i>
+        </button>
+    </div>
+</header>
+
+<!-- Filtro Membri (Max 2) -->
+<div id="mj-members-filter" class="flex flex-wrap justify-center gap-2 mb-4">
+    <!-- Pulsanti generati da JS -->
+</div>
+
+<!-- Tabs Viste -->
+<div class="flex bg-darkblue-card rounded-full p-1 mb-6 mx-auto w-max clay-item shadow-inner">
+    <button id="tab-mj-day" class="px-6 py-2 rounded-full text-sm font-bold text-white bg-darkblue-base clay-item shadow-sm transition-all" onclick="setMjView('day')">Giorno</button>
+    <button id="tab-mj-week" class="px-6 py-2 rounded-full text-sm font-bold text-darkblue-icon hover:text-white transition-all" onclick="setMjView('week')">Settimana</button>
+    <button id="tab-mj-month" class="px-6 py-2 rounded-full text-sm font-bold text-darkblue-icon hover:text-white transition-all" onclick="setMjView('month')">Mese</button>
+</div>
+
+<!-- Controlli Data -->
+<div class="flex items-center justify-between clay-card bg-darkblue-card rounded-2xl p-3 mb-6">
+    <button id="btn-prev-mj-date" onclick="changeMjDate(-1)"
+        class="w-10 h-10 rounded-full flex items-center justify-center text-darkblue-icon active:scale-95 clay-item border border-darkblue-base"><i
+            class="fa-solid fa-chevron-left"></i></button>
+    <div class="text-center">
+        <h3 class="font-bold text-darkblue-heading text-sm uppercase" id="mj-current-date-label">Caricamento...</h3>
+        <p class="text-[10px] text-darkblue-icon font-medium" id="mj-current-date-sub">--</p>
+    </div>
+    <button id="btn-next-mj-date" onclick="changeMjDate(1)"
+        class="w-10 h-10 rounded-full flex items-center justify-center text-darkblue-icon active:scale-95 clay-item border border-darkblue-base"><i
+            class="fa-solid fa-chevron-right"></i></button>
+</div>
+
+<!-- Riepilogo Giorno -->
+<div id="mj-daily-summary" class="clay-card bg-darkblue-card rounded-2xl p-4 mb-6 flex flex-col gap-2">
+    <div class="flex justify-between items-center border-b border-darkblue-base pb-2">
+        <span class="text-xs font-bold text-darkblue-icon uppercase">Totale Ore</span>
+        <span class="text-lg font-bold text-darkblue-heading" id="mj-daily-total-hours">0h 0m</span>
+    </div>
+    <div id="mj-daily-breakdown" class="flex flex-col gap-1">
+        <!-- Generato da JS -->
+    </div>
+</div>
+
+<!-- Container Principale (Timeline / Griglia) -->
+<div id="mj-view-container" class="relative min-h-[400px] w-full bg-darkblue-card rounded-3xl p-4 clay-item border border-darkblue-base overflow-hidden">
+    <!-- Contenuto iniettato dinamicamente in base alla view -->
+</div>
+
+<!-- Modal Aggiungi Turno -->
+<div id="modal-mj-shift"
+    class="fixed inset-0 bg-darkblue-base/90 z-[60] flex items-center justify-center transition-opacity duration-300 opacity-0 pointer-events-none px-4">
+    <div
+        class="clay-card bg-darkblue-card w-full max-w-sm rounded-[2.5rem] p-6 transform scale-95 transition-transform duration-300 max-h-[90vh] overflow-y-auto hidden-scrollbar flex flex-col">
+        <div class="flex justify-between items-center mb-6 shrink-0">
+            <h3 class="text-xl font-bold text-darkblue-heading">Nuovo Turno</h3>
+            <button onclick="closeMjShiftModal()"
+                class="w-8 h-8 flex items-center justify-center text-darkblue-icon bg-darkblue-base rounded-full clay-item active:scale-95 transition-transform">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <form id="form-mj-shift" class="space-y-4 flex-1">
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-darkblue-icon uppercase tracking-wider pl-4">Seleziona Lavoro *</label>
+                <div id="mj-job-selector" class="flex flex-wrap gap-2 p-2 bg-darkblue-base rounded-3xl clay-item shadow-inner min-h-[60px] items-center justify-center">
+                    <!-- Chip jobs generati da JS -->
+                </div>
+                <input type="hidden" id="mj-shift-job-id" required>
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-darkblue-icon uppercase tracking-wider pl-4">Data *</label>
+                <input type="date" id="mj-shift-date" required
+                    class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 outline-none focus:ring-2 focus:ring-darkblue-accent transition-all clay-item shadow-inner"
+                    style="color-scheme: dark;">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-darkblue-icon uppercase tracking-wider pl-2">Inizio</label>
+                    <input type="time" id="mj-shift-start" required
+                        class="w-full bg-darkblue-card text-darkblue-heading rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-darkblue-accent transition-all"
+                        style="color-scheme: dark;">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-darkblue-icon uppercase tracking-wider pl-2">Fine</label>
+                    <input type="time" id="mj-shift-end" required
+                        class="w-full bg-darkblue-card text-darkblue-heading rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-darkblue-accent transition-all"
+                        style="color-scheme: dark;">
+                </div>
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-darkblue-icon uppercase tracking-wider pl-4">Note (Opzionale)</label>
+                <input type="text" id="mj-shift-notes" placeholder="Es. Trasferta, pausa inclusa..."
+                    class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 outline-none focus:ring-2 focus:ring-darkblue-accent transition-all clay-item shadow-inner">
+            </div>
+
+            <div class="flex gap-2 pt-4">
+                <button type="submit"
+                    class="flex-1 clay-btn bg-darkblue-accent text-white h-12 rounded-full font-bold flex items-center justify-center active:scale-95 transition-transform shadow-lg">
+                    Salva Turno
+                </button>
+            </div>
+            <div class="text-center pt-2">
+                <label class="flex items-center justify-center gap-2 text-sm text-darkblue-icon cursor-pointer">
+                    <input type="checkbox" id="mj-shift-keep-open" class="rounded bg-darkblue-base border-none focus:ring-0 text-darkblue-accent">
+                    Aggiungi un altro turno oggi
+                </label>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Gestione Jobs -->
+<div id="modal-mj-jobs-manager"
+    class="fixed inset-0 bg-darkblue-base/90 z-[60] flex items-center justify-center transition-opacity duration-300 opacity-0 pointer-events-none px-4">
+    <div
+        class="clay-card bg-darkblue-card w-full max-w-sm rounded-[2.5rem] p-6 transform scale-95 transition-transform duration-300 max-h-[90vh] overflow-y-auto hidden-scrollbar flex flex-col">
+        <div class="flex justify-between items-center mb-6 shrink-0">
+            <h3 class="text-xl font-bold text-darkblue-heading">I Miei Lavori</h3>
+            <button onclick="closeMjJobsModal()"
+                class="w-8 h-8 flex items-center justify-center text-darkblue-icon bg-darkblue-base rounded-full clay-item active:scale-95 transition-transform">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div id="mj-jobs-list" class="flex flex-col gap-3 mb-6">
+            <!-- Verranno iniettati i job esistenti -->
+        </div>
+
+        <div class="border-t border-darkblue-base pt-4 mt-4">
+            <h4 class="text-sm font-bold text-darkblue-icon mb-3 uppercase">Crea Nuovo</h4>
+            <form id="form-mj-job-create" class="space-y-3">
+                <input type="text" id="mj-job-title" placeholder="Nome Lavoro (es. Ufficio)" required
+                    class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 outline-none focus:ring-2 focus:ring-darkblue-accent transition-all clay-item shadow-inner text-sm">
+                
+                <div class="flex gap-2">
+                    <input type="number" id="mj-job-rate" placeholder="€/h (Opz.)" min="0" step="0.1"
+                        class="flex-1 bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 outline-none focus:ring-2 focus:ring-darkblue-accent transition-all clay-item shadow-inner text-sm">
+                    <input type="color" id="mj-job-color" value="#3b82f6"
+                        class="w-12 h-12 rounded-full border-none outline-none cursor-pointer p-0 bg-transparent">
+                </div>
+
+                <button type="submit"
+                    class="w-full clay-btn bg-darkblue-accent text-white h-12 rounded-full font-bold flex items-center justify-center active:scale-95 transition-transform shadow-lg text-sm">
+                    Aggiungi Lavoro
+                </button>
+            </form>
+        </div>
+    </div>
+</div>

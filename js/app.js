@@ -221,6 +221,11 @@ function initModuleLogic(moduleName) {
                 initFamiglia();
             }
             break;
+        case 'multijob':
+            if (typeof initMultiJob === 'function') {
+                initMultiJob();
+            }
+            break;
         case 'menu':
             if (typeof initMenu === 'function') {
                 initMenu();
