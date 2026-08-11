@@ -332,8 +332,6 @@ function renderMjTimeline(container) {
     }
 }
 
-}
-
 function renderMjWeekView(container) {
     document.getElementById('mj-daily-summary').classList.add('hidden');
     
