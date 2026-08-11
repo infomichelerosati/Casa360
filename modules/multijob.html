@@ -163,3 +163,49 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Modifica/Elimina Turno (Multi JOB) -->
+<div id="modal-mj-shift-edit" class="fixed inset-0 bg-darkblue-bg/80 backdrop-blur-sm z-[70] flex flex-col justify-end opacity-0 pointer-events-none transition-opacity duration-300">
+    <div class="bg-darkblue-card w-full rounded-t-3xl p-6 shadow-2xl clay-card transform translate-y-full transition-transform duration-300 max-h-[90vh] overflow-y-auto">
+        
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-black text-darkblue-heading">Modifica Turno</h3>
+            <button onclick="closeMjShiftEditModal()" class="w-10 h-10 rounded-full bg-darkblue-base flex items-center justify-center text-darkblue-icon hover:text-white transition-colors">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+        </div>
+
+        <input type="hidden" id="mj-edit-shift-id">
+
+        <div class="space-y-4">
+            <select id="mj-edit-shift-job" class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 outline-none focus:ring-2 focus:ring-darkblue-accent transition-all clay-item shadow-inner text-sm appearance-none">
+                <!-- Opzioni popolate via JS -->
+            </select>
+
+            <div class="flex gap-4">
+                <div class="flex-1 space-y-2">
+                    <label class="text-xs font-bold text-darkblue-icon ml-2">Inizio</label>
+                    <input type="time" id="mj-edit-shift-start" class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 outline-none focus:ring-2 focus:ring-darkblue-accent transition-all clay-item shadow-inner text-sm">
+                </div>
+                <div class="flex-1 space-y-2">
+                    <label class="text-xs font-bold text-darkblue-icon ml-2">Fine</label>
+                    <input type="time" id="mj-edit-shift-end" class="w-full bg-darkblue-base text-darkblue-heading rounded-full px-5 py-3 outline-none focus:ring-2 focus:ring-darkblue-accent transition-all clay-item shadow-inner text-sm">
+                </div>
+            </div>
+
+            <textarea id="mj-edit-shift-notes" placeholder="Note aggiuntive (opzionale)" rows="2"
+                class="w-full bg-darkblue-base text-darkblue-heading rounded-2xl px-5 py-3 outline-none focus:ring-2 focus:ring-darkblue-accent transition-all clay-item shadow-inner text-sm resize-none"></textarea>
+
+            <div class="flex gap-3 mt-6">
+                <button onclick="deleteMjShift()"
+                    class="w-14 clay-btn bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white h-12 rounded-full font-bold flex items-center justify-center active:scale-95 transition-all shadow-lg text-sm border border-red-500/50">
+                    <i class="fas fa-trash"></i>
+                </button>
+                <button onclick="saveMjShiftEdit()"
+                    class="flex-1 clay-btn bg-darkblue-accent text-white h-12 rounded-full font-bold flex items-center justify-center active:scale-95 transition-transform shadow-lg text-sm">
+                    Salva Modifiche
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -266,7 +266,7 @@ function renderMjTimeline(container) {
         html += `
             <div class="absolute left-14 right-2 rounded-xl p-2 shadow-lg clay-item flex flex-col justify-center overflow-hidden cursor-pointer active:scale-[0.98] transition-transform" 
                 style="top: ${startTotal}px; height: ${duration}px; background-color: ${jobColor}40; border-left: 4px solid ${jobColor}; z-index: 10;"
-                onclick="alert('Opzioni turno in arrivo...')">
+                onclick="openMjShiftEditModal('${shift.id}')">
                 <p class="text-xs font-bold text-white drop-shadow-md truncate">${jobTitle}</p>
                 <p class="text-[10px] text-white/80 font-medium">${shift.start_time.substring(0,5)} - ${shift.end_time.substring(0,5)}</p>
                 ${shift.notes ? `<p class="text-[9px] text-white/60 truncate mt-1 italic">${shift.notes}</p>` : ''}
@@ -719,4 +719,89 @@ function formatMinutes(totalMins) {
 function timeToMinutes(timeStr) {
     const [h, m] = timeStr.split(':').map(Number);
     return (h * 60) + m;
+}
+
+// ---------------------------------------------------------
+// MODIFICA ED ELIMINAZIONE TURNO
+// ---------------------------------------------------------
+
+function openMjShiftEditModal(shiftId) {
+    const shift = mjShifts.find(s => s.id === shiftId);
+    if (!shift) return;
+
+    document.getElementById('mj-edit-shift-id').value = shift.id;
+    document.getElementById('mj-edit-shift-start').value = shift.start_time.substring(0, 5);
+    document.getElementById('mj-edit-shift-end').value = shift.end_time.substring(0, 5);
+    document.getElementById('mj-edit-shift-notes').value = shift.notes || '';
+
+    const jobSelect = document.getElementById('mj-edit-shift-job');
+    jobSelect.innerHTML = mjJobs.map(job => 
+        `<option value="${job.id}" ${job.id === shift.job_id ? 'selected' : ''}>${job.title}</option>`
+    ).join('');
+
+    const modal = document.getElementById('modal-mj-shift-edit');
+    if (modal) {
+        modal.classList.remove('opacity-0', 'pointer-events-none');
+        modal.querySelector('.clay-card').classList.remove('translate-y-full');
+    }
+}
+
+function closeMjShiftEditModal() {
+    const modal = document.getElementById('modal-mj-shift-edit');
+    if (modal) {
+        modal.classList.add('opacity-0', 'pointer-events-none');
+        modal.querySelector('.clay-card').classList.add('translate-y-full');
+    }
+}
+
+async function saveMjShiftEdit() {
+    const shiftId = document.getElementById('mj-edit-shift-id').value;
+    const jobId = document.getElementById('mj-edit-shift-job').value;
+    const start = document.getElementById('mj-edit-shift-start').value;
+    const end = document.getElementById('mj-edit-shift-end').value;
+    const notes = document.getElementById('mj-edit-shift-notes').value;
+
+    if (!shiftId || !jobId || !start || !end) return;
+
+    try {
+        const { error } = await window.supabase
+            .from('mj_shifts')
+            .update({
+                job_id: jobId,
+                start_time: start,
+                end_time: end,
+                notes: notes
+            })
+            .eq('id', shiftId);
+
+        if (error) throw error;
+        
+        closeMjShiftEditModal();
+        fetchMjShifts();
+    } catch (err) {
+        console.error("Errore modifica turno:", err);
+        alert("Errore durante la modifica del turno.");
+    }
+}
+
+async function deleteMjShift() {
+    const shiftId = document.getElementById('mj-edit-shift-id').value;
+    if (!shiftId) return;
+
+    if (!confirm("Sei sicuro di voler eliminare questo turno? L'operazione è irreversibile.")) return;
+
+    try {
+        const { error } = await window.supabase
+            .from('mj_shifts')
+            .delete()
+            .eq('id', shiftId);
+
+        if (error) throw error;
+        
+        closeMjShiftEditModal();
+        fetchMjShifts();
+    } catch (err) {
+        console.error("Errore eliminazione turno:", err);
+        alert("Errore durante l'eliminazione del turno.");
+    }
 }
